@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>worker_installer.tasks &mdash; cloudify-agent-installer-plugin 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-agent-installer-plugin 3.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> cloudify-agent-installer-plugin</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">cloudify-agent-installer-plugin</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>worker_installer.tasks</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for worker_installer.tasks</h1><div class="highlight"><pre>
+<span class="c">#########</span>
+<span class="c"># Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># you may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#  * See the License for the specific language governing permissions and</span>
+<span class="c">#  * limitations under the License.</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;elip&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">jinja2</span>
+<span class="kn">from</span> <span class="nn">worker_installer</span> <span class="kn">import</span> <span class="n">init_worker_installer</span>
+<span class="kn">from</span> <span class="nn">worker_installer.utils</span> <span class="kn">import</span> <span class="n">is_on_management_worker</span>
+<span class="kn">from</span> <span class="nn">cloudify.decorators</span> <span class="kn">import</span> <span class="n">operation</span>
+<span class="kn">from</span> <span class="nn">cloudify</span> <span class="kn">import</span> <span class="n">manager</span>
+<span class="kn">from</span> <span class="nn">cloudify</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<span class="n">PLUGIN_INSTALLER_PLUGIN_PATH</span> <span class="o">=</span> <span class="s">&#39;plugin_installer.tasks&#39;</span>
+<span class="n">AGENT_INSTALLER_PLUGIN_PATH</span> <span class="o">=</span> <span class="s">&#39;worker_installer.tasks&#39;</span>
+<span class="n">CELERY_INCLUDES_LIST</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">AGENT_INSTALLER_PLUGIN_PATH</span><span class="p">,</span> <span class="n">PLUGIN_INSTALLER_PLUGIN_PATH</span>
+<span class="p">]</span>
+
+<span class="n">CELERY_CONFIG_PATH</span> <span class="o">=</span> <span class="s">&#39;/packages/templates/{0}-celeryd-cloudify.conf.template&#39;</span>
+<span class="n">CELERY_INIT_PATH</span> <span class="o">=</span> <span class="s">&#39;/packages/templates/{0}-celeryd-cloudify.init.template&#39;</span>
+<span class="n">AGENT_PACKAGE_PATH</span> <span class="o">=</span> <span class="s">&#39;/packages/agents/{0}-agent.tar.gz&#39;</span>
+<span class="n">DISABLE_REQUIRETTY_SCRIPT_URL</span> <span class="o">=</span>\
+    <span class="s">&#39;/packages/scripts/{0}-agent-disable-requiretty.sh&#39;</span>
+
+<span class="n">SUPPORTED_DISTROS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;Ubuntu&#39;</span><span class="p">,</span> <span class="s">&#39;debian&#39;</span><span class="p">,</span> <span class="s">&#39;centos&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_agent_package_url"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.get_agent_package_url">[docs]</a><span class="k">def</span> <span class="nf">get_agent_package_url</span><span class="p">(</span><span class="n">distro</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the agent package url the package will be downloaded from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s">&#39;{0}{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_manager_file_server_url</span><span class="p">(),</span>
+                           <span class="n">AGENT_PACKAGE_PATH</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distro</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="get_disable_requiretty_script_url"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.get_disable_requiretty_script_url">[docs]</a><span class="k">def</span> <span class="nf">get_disable_requiretty_script_url</span><span class="p">(</span><span class="n">distro</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the disable requiretty script url the script will be downloaded</span>
+<span class="sd">    from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s">&#39;{0}{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">get_manager_file_server_url</span><span class="p">(),</span>
+                           <span class="n">DISABLE_REQUIRETTY_SCRIPT_URL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distro</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="get_celery_includes_list"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.get_celery_includes_list">[docs]</a><span class="k">def</span> <span class="nf">get_celery_includes_list</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">CELERY_INCLUDES_LIST</span>
+
+</div>
+<span class="nd">@operation</span>
+<span class="nd">@init_worker_installer</span>
+<span class="k">def</span> <span class="nf">install</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORTED_DISTROS</span><span class="p">:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;distro {} not supported &#39;</span>
+                         <span class="s">&#39;when installing agent&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                             <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">]))</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;unsupported distribution&#39;</span><span class="p">)</span>
+    <span class="n">agent_package_url</span> <span class="o">=</span> <span class="n">get_agent_package_url</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">])</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Pinging agent installer target&quot;</span><span class="p">)</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s">&quot;installing celery worker {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">worker_exists</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Worker for deployment {0} &quot;</span>
+                        <span class="s">&quot;is already installed. nothing to do.&quot;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">deployment_id</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s">&#39;Installing celery worker [worker_config={0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">))</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;mkdir -p {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">]))</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s">&#39;Downloading agent package from: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">agent_package_url</span><span class="p">))</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;wget -T 30 -O {0}/{1}-agent.tar.gz {2}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">],</span> <span class="n">agent_package_url</span><span class="p">))</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="s">&#39;tar xzvf {0}/{1}-agent.tar.gz --strip=2 -C {2}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">],</span>
+            <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;archives&#39;</span><span class="p">,</span> <span class="s">&#39;bin&#39;</span><span class="p">,</span> <span class="s">&#39;include&#39;</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">]:</span>
+        <span class="n">link_path</span> <span class="o">=</span> <span class="s">&#39;{0}/env/local/{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="n">link</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;unlink {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">link_path</span><span class="p">))</span>
+            <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;ln -s {0}/env/{1} {2}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="n">link</span><span class="p">,</span> <span class="n">link_path</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Error process link: {0} [error={1}] - &#39;</span>
+                            <span class="s">&#39;ignoring..&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">link_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+
+    <span class="n">create_celery_configuration</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_resource</span><span class="p">)</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;sudo chmod +x {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;init_file&#39;</span><span class="p">]))</span>
+
+    <span class="c"># This is for fixing virtualenv included in package paths</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;sed -i &#39;1 s|.*/bin/python.*$|#!{0}/env/bin/python|g&#39; &quot;</span>
+               <span class="s">&quot;{0}/env/bin/*&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">]))</span>
+
+    <span class="c"># Remove downloaded agent package</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;rm {0}/{1}-agent.tar.gz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">]))</span>
+
+    <span class="c"># Disable requiretty</span>
+    <span class="k">if</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;disable_requiretty&#39;</span><span class="p">]:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Removing requiretty in sudoers file&quot;</span><span class="p">)</span>
+        <span class="n">disable_requiretty_script</span> <span class="o">=</span> <span class="s">&#39;{0}/disable-requiretty.sh&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">])</span>
+        <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;wget -T 30 -O {0} {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">disable_requiretty_script</span><span class="p">,</span> <span class="n">get_disable_requiretty_script_url</span><span class="p">(</span>
+                <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">])))</span>
+
+        <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;chmod +x {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">disable_requiretty_script</span><span class="p">))</span>
+
+        <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;sudo {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">disable_requiretty_script</span><span class="p">))</span>
+
+
+<span class="nd">@operation</span>
+<span class="nd">@init_worker_installer</span>
+<span class="k">def</span> <span class="nf">uninstall</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s">&#39;Uninstalling celery worker [worker_config={0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">))</span>
+
+    <span class="n">files_to_delete</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;init_file&#39;</span><span class="p">],</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;config_file&#39;</span><span class="p">]</span>
+    <span class="p">]</span>
+    <span class="n">folders_to_delete</span> <span class="o">=</span> <span class="p">[</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">]]</span>
+    <span class="n">delete_files_if_exist</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">files_to_delete</span><span class="p">)</span>
+    <span class="n">delete_folders_if_exist</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">folders_to_delete</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="delete_files_if_exist"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.delete_files_if_exist">[docs]</a><span class="k">def</span> <span class="nf">delete_files_if_exist</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+    <span class="n">missing_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">file_to_delete</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">runner</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_to_delete</span><span class="p">):</span>
+            <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;sudo rm {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_to_delete</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">missing_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_to_delete</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">missing_files</span><span class="p">:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s">&quot;Could not find files {0} while trying to uninstall worker {1}&quot;</span>
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">missing_files</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+</div>
+<div class="viewcode-block" id="delete_folders_if_exist"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.delete_folders_if_exist">[docs]</a><span class="k">def</span> <span class="nf">delete_folders_if_exist</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">folders</span><span class="p">):</span>
+    <span class="n">missing_folders</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">folder_to_delete</span> <span class="ow">in</span> <span class="n">folders</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">runner</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">folder_to_delete</span><span class="p">):</span>
+            <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;sudo rm -rf {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">folder_to_delete</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">missing_folders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">folder_to_delete</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">missing_folders</span><span class="p">:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s">&#39;Could not find folders {0} while trying to uninstall worker {1}&#39;</span>
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">missing_folders</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+</div>
+<span class="nd">@operation</span>
+<span class="nd">@init_worker_installer</span>
+<span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;stopping celery worker {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">runner</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;init_file&#39;</span><span class="p">]):</span>
+        <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="s">&quot;sudo service celeryd-{0} stop&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s">&quot;Could not find any workers with name {0}. nothing to do.&quot;</span>
+            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]))</span>
+
+
+<span class="nd">@operation</span>
+<span class="nd">@init_worker_installer</span>
+<span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;starting celery worker {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;sudo service celeryd-{0} start&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]))</span>
+
+    <span class="n">_verify_no_celery_error</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">)</span>
+
+
+<span class="nd">@operation</span>
+<span class="nd">@init_worker_installer</span>
+<span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s">&quot;restarting celery worker {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+
+    <span class="n">restart_celery_worker</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_agent_ip"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.get_agent_ip">[docs]</a><span class="k">def</span> <span class="nf">get_agent_ip</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">is_on_management_worker</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_manager_ip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;host&#39;</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="create_celery_configuration"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.create_celery_configuration">[docs]</a><span class="k">def</span> <span class="nf">create_celery_configuration</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">,</span> <span class="n">resource_loader</span><span class="p">):</span>
+    <span class="n">create_celery_includes_file</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">)</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">jinja2</span><span class="o">.</span><span class="n">FunctionLoader</span><span class="p">(</span><span class="n">resource_loader</span><span class="p">)</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">jinja2</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
+    <span class="n">config_template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">CELERY_CONFIG_PATH</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">]))</span>
+    <span class="n">config_template_values</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;includes_file_path&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;includes_file&#39;</span><span class="p">],</span>
+        <span class="s">&#39;celery_base_dir&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;celery_base_dir&#39;</span><span class="p">],</span>
+        <span class="s">&#39;worker_modifier&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+        <span class="s">&#39;management_ip&#39;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_manager_ip</span><span class="p">(),</span>
+        <span class="s">&#39;broker_ip&#39;</span><span class="p">:</span> <span class="s">&#39;127.0.0.1&#39;</span> <span class="k">if</span> <span class="n">is_on_management_worker</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_manager_ip</span><span class="p">(),</span>
+        <span class="s">&#39;agent_ip&#39;</span><span class="p">:</span> <span class="n">get_agent_ip</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">),</span>
+        <span class="s">&#39;celery_user&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;user&#39;</span><span class="p">],</span>
+        <span class="s">&#39;celery_group&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;user&#39;</span><span class="p">],</span>
+        <span class="s">&#39;worker_autoscale&#39;</span><span class="p">:</span> <span class="s">&#39;{0},{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;max_workers&#39;</span><span class="p">],</span>
+                                             <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;min_workers&#39;</span><span class="p">])</span>
+    <span class="p">}</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s">&#39;Populating celery config jinja2 template with the following &#39;</span>
+        <span class="s">&#39;values: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_template_values</span><span class="p">))</span>
+
+    <span class="n">config</span> <span class="o">=</span> <span class="n">config_template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">config_template_values</span><span class="p">)</span>
+    <span class="n">init_template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">CELERY_INIT_PATH</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;distro&#39;</span><span class="p">]))</span>
+    <span class="n">init_template_values</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;celery_base_dir&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;celery_base_dir&#39;</span><span class="p">],</span>
+        <span class="s">&#39;worker_modifier&#39;</span><span class="p">:</span> <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s">&#39;Populating celery init.d jinja2 template with the following &#39;</span>
+        <span class="s">&#39;values: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">init_template_values</span><span class="p">))</span>
+
+    <span class="n">init</span> <span class="o">=</span> <span class="n">init_template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">init_template_values</span><span class="p">)</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s">&#39;Creating celery config and init files [worker_config={0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">worker_config</span><span class="p">))</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;config_file&#39;</span><span class="p">],</span> <span class="n">config</span><span class="p">,</span> <span class="n">use_sudo</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;init_file&#39;</span><span class="p">],</span> <span class="n">init</span><span class="p">,</span> <span class="n">use_sudo</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="create_celery_includes_file"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.create_celery_includes_file">[docs]</a><span class="k">def</span> <span class="nf">create_celery_includes_file</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+    <span class="c"># build initial includes</span>
+    <span class="n">includes_list</span> <span class="o">=</span> <span class="n">get_celery_includes_list</span><span class="p">()</span>
+
+    <span class="n">runner</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;includes_file&#39;</span><span class="p">],</span>
+               <span class="s">&#39;INCLUDES={0}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">includes_list</span><span class="p">)))</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Created celery includes file [file=</span><span class="si">%s</span><span class="s">, content=</span><span class="si">%s</span><span class="s">]&#39;</span><span class="p">,</span>
+                     <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;includes_file&#39;</span><span class="p">],</span>
+                     <span class="n">includes_list</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="worker_exists"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.worker_exists">[docs]</a><span class="k">def</span> <span class="nf">worker_exists</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">runner</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="restart_celery_worker"><a class="viewcode-back" href="../../index.html#worker_installer.tasks.restart_celery_worker">[docs]</a><span class="k">def</span> <span class="nf">restart_celery_worker</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&quot;sudo service celeryd-{0} restart&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]))</span>
+    <span class="n">_verify_no_celery_error</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_verify_no_celery_error</span><span class="p">(</span><span class="n">runner</span><span class="p">,</span> <span class="n">worker_config</span><span class="p">):</span>
+    <span class="n">celery_error_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">worker_config</span><span class="p">[</span><span class="s">&#39;base_dir&#39;</span><span class="p">],</span> <span class="s">&#39;work/celery_error.out&#39;</span><span class="p">)</span>
+
+    <span class="c"># this means the celery worker had an uncaught</span>
+    <span class="c">#  exception and it wrote its content</span>
+    <span class="c"># to the file above because of our custom exception handler (see celery.py)</span>
+    <span class="k">if</span> <span class="n">runner</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">celery_error_out</span><span class="p">):</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">celery_error_out</span><span class="p">)</span>
+        <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;rm {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">celery_error_out</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s">&#39;Celery worker failed to start:</span><span class="se">\n</span><span class="s">{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
