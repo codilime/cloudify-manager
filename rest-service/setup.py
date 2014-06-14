@@ -17,7 +17,6 @@ __author__ = 'dank'
 
 from setuptools import setup
 
-
 setup(
     name='cloudify-rest-service',
     version='3.0',

@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>manager_rest.blueprints_manager &mdash; cloudify-rest-service 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-rest-service 3.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> cloudify-rest-service</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">cloudify-rest-service</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>manager_rest.blueprints_manager</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for manager_rest.blueprints_manager</h1><div class="highlight"><pre>
+<span class="c">#########</span>
+<span class="c"># Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># you may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#  * See the License for the specific language governing permissions and</span>
+<span class="c">#  * limitations under the License.</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;dan&#39;</span>
+
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">contextlib</span>
+
+<span class="kn">from</span> <span class="nn">dsl_parser</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="kn">from</span> <span class="nn">urllib2</span> <span class="kn">import</span> <span class="n">urlopen</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">g</span><span class="p">,</span> <span class="n">current_app</span>
+
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">responses</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">manager_exceptions</span>
+<span class="kn">from</span> <span class="nn">manager_rest.workflow_client</span> <span class="kn">import</span> <span class="n">workflow_client</span>
+<span class="kn">from</span> <span class="nn">manager_rest.storage_manager</span> <span class="kn">import</span> <span class="n">get_storage_manager</span>
+<span class="kn">from</span> <span class="nn">manager_rest.util</span> <span class="kn">import</span> <span class="n">maybe_register_teardown</span>
+
+
+<div class="viewcode-block" id="DslParseException"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.DslParseException">[docs]</a><span class="k">class</span> <span class="nc">DslParseException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="BlueprintAlreadyExistsException"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintAlreadyExistsException">[docs]</a><span class="k">class</span> <span class="nc">BlueprintAlreadyExistsException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="ne">Exception</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">blueprint_id</span>
+
+</div>
+<div class="viewcode-block" id="BlueprintsManager"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsManager</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="BlueprintsManager.sm"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.sm">[docs]</a>    <span class="k">def</span> <span class="nf">sm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">get_storage_manager</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.blueprints_list"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.blueprints_list">[docs]</a>    <span class="k">def</span> <span class="nf">blueprints_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">blueprints_list</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.deployments_list"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.deployments_list">[docs]</a>    <span class="k">def</span> <span class="nf">deployments_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">deployments_list</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.executions_list"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.executions_list">[docs]</a>    <span class="k">def</span> <span class="nf">executions_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">executions_list</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.get_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.get_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.get_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.get_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.get_execution"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.get_execution">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_execution</span><span class="p">(</span><span class="n">execution_id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.get_deployment_executions"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.get_deployment_executions">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment_executions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_deployment_executions</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+
+    <span class="c"># TODO: call celery tasks instead of doing this directly here</span>
+    <span class="c"># TODO: prepare multi instance plan should be called on workflow execution</span></div>
+<div class="viewcode-block" id="BlueprintsManager.publish_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.publish_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">publish_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dsl_location</span><span class="p">,</span> <span class="n">alias_mapping_url</span><span class="p">,</span>
+                          <span class="n">resources_base_url</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="c"># TODO: error code if parsing fails (in one of the 2 tasks)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">plan</span> <span class="o">=</span> <span class="n">tasks</span><span class="o">.</span><span class="n">parse_dsl</span><span class="p">(</span><span class="n">dsl_location</span><span class="p">,</span> <span class="n">alias_mapping_url</span><span class="p">,</span>
+                                   <span class="n">resources_base_url</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">urlopen</span><span class="p">(</span><span class="n">dsl_location</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DslParseException</span><span class="p">(</span><span class="o">*</span><span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="n">now</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="n">parsed_plan</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blueprint_id</span><span class="p">:</span>
+            <span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">parsed_plan</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+
+        <span class="n">new_blueprint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">(</span><span class="n">plan</span><span class="o">=</span><span class="n">parsed_plan</span><span class="p">,</span>
+                                              <span class="nb">id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">,</span>
+                                              <span class="n">created_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">updated_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                                              <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">put_blueprint</span><span class="p">(</span><span class="n">new_blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">new_blueprint</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_blueprint</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.delete_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.delete_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">delete_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="n">blueprint_deployments</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span>\
+            <span class="o">.</span><span class="n">get_blueprint_deployments</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">blueprint_deployments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">DependentExistsError</span><span class="p">(</span>
+                <span class="s">&quot;Can&#39;t delete blueprint {0} - There exist &quot;</span>
+                <span class="s">&quot;deployments for this blueprint; Deployments ids: {1}&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span>
+                        <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">dep</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">dep</span>
+                                  <span class="ow">in</span> <span class="n">blueprint_deployments</span><span class="p">])))</span>
+
+        <span class="k">return</span> <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">delete_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.delete_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.delete_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">delete_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">ignore_live_nodes</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span>
+
+        <span class="c"># Verify deployment exists.</span>
+        <span class="n">storage</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+
+        <span class="c"># validate there are no running executions for this deployment</span>
+        <span class="n">executions</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">get_deployment_executions</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">execution</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;terminated&#39;</span><span class="p">,</span> <span class="s">&#39;failed&#39;</span><span class="p">)</span> <span class="k">for</span>
+           <span class="n">execution</span> <span class="ow">in</span> <span class="n">executions</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">DependentExistsError</span><span class="p">(</span>
+                <span class="s">&quot;Can&#39;t delete deployment {0} - There are running &quot;</span>
+                <span class="s">&quot;executions for this deployment. Running executions ids: {1}&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">deployment_id</span><span class="p">,</span>
+                    <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">execution</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">execution</span> <span class="ow">in</span>
+                              <span class="n">executions</span> <span class="k">if</span> <span class="n">execution</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span>
+                              <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;terminated&#39;</span><span class="p">,</span> <span class="s">&#39;failed&#39;</span><span class="p">)])))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_live_nodes</span><span class="p">:</span>
+            <span class="n">node_instances</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">get_node_instances</span><span class="p">(</span>
+                <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">)</span>
+            <span class="c"># validate either all nodes for this deployment are still</span>
+            <span class="c"># uninitialized or have been deleted</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;uninitialized&#39;</span><span class="p">,</span> <span class="s">&#39;deleted&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span>
+                   <span class="n">node_instances</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">DependentExistsError</span><span class="p">(</span>
+                    <span class="s">&quot;Can&#39;t delete deployment {0} - There are live nodes for &quot;</span>
+                    <span class="s">&quot;this deployment. Live nodes ids: {1}&quot;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span>
+                            <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">node</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">node_instances</span>
+                                     <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span>
+                                     <span class="p">(</span><span class="s">&#39;uninitialized&#39;</span><span class="p">,</span> <span class="s">&#39;deleted&#39;</span><span class="p">)])))</span>
+        <span class="k">return</span> <span class="n">storage</span><span class="o">.</span><span class="n">delete_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+
+    <span class="c"># currently validation is split to 2 phases: the first</span>
+    <span class="c"># part is during submission (dsl parsing)</span>
+    <span class="c"># second part is during call to validate which simply delegates</span>
+    <span class="c"># the plan to the workflow service</span>
+    <span class="c"># so we can parse all the workflows and see things are ok</span></div>
+<div class="viewcode-block" id="BlueprintsManager.validate_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.validate_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">validate_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="n">blueprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">plan</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">workflow_client</span><span class="p">()</span><span class="o">.</span><span class="n">validate_workflows</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+        <span class="c"># TODO raise error if error</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">BlueprintValidationStatus</span><span class="p">(</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.execute_workflow"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.execute_workflow">[docs]</a>    <span class="k">def</span> <span class="nf">execute_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">workflow_id</span><span class="p">):</span>
+        <span class="n">deployment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">workflow_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">deployment</span><span class="o">.</span><span class="n">plan</span><span class="p">[</span><span class="s">&#39;workflows&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NonexistentWorkflowError</span><span class="p">(</span>
+                <span class="s">&#39;Workflow {0} does not exist in deployment {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">workflow_id</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">))</span>
+        <span class="n">workflow</span> <span class="o">=</span> <span class="n">deployment</span><span class="o">.</span><span class="n">plan</span><span class="p">[</span><span class="s">&#39;workflows&#39;</span><span class="p">][</span><span class="n">workflow_id</span><span class="p">]</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">deployment</span><span class="o">.</span><span class="n">plan</span>
+
+        <span class="n">execution_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">workflow_client</span><span class="p">()</span><span class="o">.</span><span class="n">execute_workflow</span><span class="p">(</span>
+            <span class="n">workflow_id</span><span class="p">,</span>
+            <span class="n">workflow</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">deployment</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span>
+            <span class="n">execution_id</span><span class="o">=</span><span class="n">execution_id</span><span class="p">)</span>
+        <span class="c"># TODO raise error if there is error in response</span>
+
+        <span class="n">new_execution</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Execution</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">execution_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;state&#39;</span><span class="p">],</span>
+            <span class="n">internal_workflow_id</span><span class="o">=</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">],</span>
+            <span class="n">created_at</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s">&#39;created&#39;</span><span class="p">]),</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">deployment</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+            <span class="n">workflow_id</span><span class="o">=</span><span class="n">workflow_id</span><span class="p">,</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span>
+            <span class="n">error</span><span class="o">=</span><span class="s">&#39;None&#39;</span><span class="p">)</span>
+
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">put_execution</span><span class="p">(</span><span class="n">new_execution</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">new_execution</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_execution</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.cancel_workflow"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.cancel_workflow">[docs]</a>    <span class="k">def</span> <span class="nf">cancel_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="n">execution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_execution</span><span class="p">(</span><span class="n">execution_id</span><span class="p">)</span>
+        <span class="n">workflow_client</span><span class="p">()</span><span class="o">.</span><span class="n">cancel_workflow</span><span class="p">(</span>
+            <span class="n">execution</span><span class="o">.</span><span class="n">internal_workflow_id</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">execution</span>
+</div>
+<div class="viewcode-block" id="BlueprintsManager.create_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.BlueprintsManager.create_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">create_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">blueprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">plan</span>
+        <span class="n">deployment_json_plan</span> <span class="o">=</span> <span class="n">tasks</span><span class="o">.</span><span class="n">prepare_deployment_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">)</span>
+
+        <span class="n">now</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="n">new_deployment</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Deployment</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">plan</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">deployment_json_plan</span><span class="p">),</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">created_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">updated_at</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">put_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">new_deployment</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_deployment_nodes</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
+
+        <span class="n">node_instances</span> <span class="o">=</span> <span class="n">new_deployment</span><span class="o">.</span><span class="n">plan</span><span class="p">[</span><span class="s">&#39;node_instances&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">node_instance</span> <span class="ow">in</span> <span class="n">node_instances</span><span class="p">:</span>
+            <span class="n">instance_id</span> <span class="o">=</span> <span class="n">node_instance</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+            <span class="n">node_id</span> <span class="o">=</span> <span class="n">node_instance</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="n">relationships</span> <span class="o">=</span> <span class="n">node_instance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;relationships&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">host_id</span> <span class="o">=</span> <span class="n">node_instance</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;host_id&#39;</span><span class="p">)</span>
+
+            <span class="n">instance</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DeploymentNodeInstance</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">instance_id</span><span class="p">,</span>
+                <span class="n">node_id</span><span class="o">=</span><span class="n">node_id</span><span class="p">,</span>
+                <span class="n">host_id</span><span class="o">=</span><span class="n">host_id</span><span class="p">,</span>
+                <span class="n">relationships</span><span class="o">=</span><span class="n">relationships</span><span class="p">,</span>
+                <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span>
+                <span class="n">state</span><span class="o">=</span><span class="s">&#39;uninitialized&#39;</span><span class="p">,</span>
+                <span class="n">runtime_properties</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">put_node_instance</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_count</span><span class="p">(</span><span class="n">expected_count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">node_instances</span><span class="p">),</span>
+                             <span class="n">query_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_node_instances</span><span class="p">,</span>
+                             <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_deployment</span>
+</div>
+    <span class="k">def</span> <span class="nf">_create_deployment_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">plan</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">raw_node</span> <span class="ow">in</span> <span class="n">plan</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">put_node</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">DeploymentNode</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+                <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span>
+                <span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">,</span>
+                <span class="nb">type</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span>
+                <span class="n">type_hierarchy</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;type_hierarchy&#39;</span><span class="p">],</span>
+                <span class="n">number_of_instances</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;instances&#39;</span><span class="p">][</span><span class="s">&#39;deploy&#39;</span><span class="p">],</span>
+                <span class="n">host_id</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;host_id&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s">&#39;host_id&#39;</span> <span class="ow">in</span> <span class="n">raw_node</span> <span class="k">else</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="n">properties</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;properties&#39;</span><span class="p">],</span>
+                <span class="n">operations</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;operations&#39;</span><span class="p">],</span>
+                <span class="n">plugins</span><span class="o">=</span><span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;plugins&#39;</span><span class="p">],</span>
+                <span class="n">plugins_to_install</span><span class="o">=</span><span class="n">raw_node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;plugins_to_install&#39;</span><span class="p">),</span>
+                <span class="n">relationships</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_prepare_node_relationships</span><span class="p">(</span><span class="n">raw_node</span><span class="p">)</span>
+            <span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_count</span><span class="p">(</span><span class="n">expected_count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">plan</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]),</span>
+                             <span class="n">query_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">,</span>
+                             <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_prepare_node_relationships</span><span class="p">(</span><span class="n">raw_node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;relationships&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw_node</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">prepared_relationships</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">raw_relationship</span> <span class="ow">in</span> <span class="n">raw_node</span><span class="p">[</span><span class="s">&#39;relationships&#39;</span><span class="p">]:</span>
+            <span class="n">relationship</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;target_id&#39;</span><span class="p">:</span> <span class="n">raw_relationship</span><span class="p">[</span><span class="s">&#39;target_id&#39;</span><span class="p">],</span>
+                <span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="n">raw_relationship</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span>
+                <span class="s">&#39;properties&#39;</span><span class="p">:</span> <span class="n">raw_relationship</span><span class="p">[</span><span class="s">&#39;properties&#39;</span><span class="p">],</span>
+                <span class="s">&#39;source_operations&#39;</span><span class="p">:</span> <span class="n">raw_relationship</span><span class="p">[</span><span class="s">&#39;source_operations&#39;</span><span class="p">],</span>
+                <span class="s">&#39;target_operations&#39;</span><span class="p">:</span> <span class="n">raw_relationship</span><span class="p">[</span><span class="s">&#39;target_operations&#39;</span><span class="p">],</span>
+            <span class="p">}</span>
+            <span class="n">prepared_relationships</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">relationship</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prepared_relationships</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_wait_for_count</span><span class="p">(</span><span class="n">expected_count</span><span class="p">,</span> <span class="n">query_method</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="mi">30</span>
+        <span class="c"># workaround ES eventual consistency</span>
+        <span class="c"># TODO check if there is a count query and do that</span>
+        <span class="n">actual_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_method</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">))</span>
+        <span class="k">while</span> <span class="n">actual_count</span> <span class="o">&lt;</span> <span class="n">expected_count</span> <span class="ow">and</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">actual_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_method</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">actual_count</span> <span class="o">&lt;</span> <span class="n">expected_count</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Timed out while waiting for nodes count&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="teardown_blueprints_manager"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.teardown_blueprints_manager">[docs]</a><span class="k">def</span> <span class="nf">teardown_blueprints_manager</span><span class="p">(</span><span class="n">exception</span><span class="p">):</span>
+    <span class="c"># print &quot;tearing down blueprints manager!&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="c"># What we need to access this manager in Flask</span></div>
+<div class="viewcode-block" id="get_blueprints_manager"><a class="viewcode-back" href="../../index.html#manager_rest.blueprints_manager.get_blueprints_manager">[docs]</a><span class="k">def</span> <span class="nf">get_blueprints_manager</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the current blueprints manager</span>
+<span class="sd">    or create one if none exists for the current app context</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s">&#39;blueprints_manager&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">blueprints_manager</span> <span class="o">=</span> <span class="n">BlueprintsManager</span><span class="p">()</span>
+        <span class="n">maybe_register_teardown</span><span class="p">(</span><span class="n">current_app</span><span class="p">,</span> <span class="n">teardown_blueprints_manager</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span><span class="o">.</span><span class="n">blueprints_manager</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

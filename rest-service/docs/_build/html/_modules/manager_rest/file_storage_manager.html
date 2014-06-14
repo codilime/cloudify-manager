@@ -1,0 +1,476 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>manager_rest.file_storage_manager &mdash; cloudify-rest-service 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-rest-service 3.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> cloudify-rest-service</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">cloudify-rest-service</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>manager_rest.file_storage_manager</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for manager_rest.file_storage_manager</h1><div class="highlight"><pre>
+<span class="c">#########</span>
+<span class="c"># Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># you may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#  * See the License for the specific language governing permissions and</span>
+<span class="c">#  * limitations under the License.</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ran&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">manager_rest.models</span> <span class="kn">import</span> <span class="p">(</span><span class="n">BlueprintState</span><span class="p">,</span>
+                                 <span class="n">Deployment</span><span class="p">,</span>
+                                 <span class="n">Execution</span><span class="p">,</span>
+                                 <span class="n">DeploymentNode</span><span class="p">,</span>
+                                 <span class="n">DeploymentNodeInstance</span><span class="p">,</span>
+                                 <span class="n">ProviderContext</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">manager_exceptions</span>
+
+<span class="n">STORAGE_FILE_PATH</span> <span class="o">=</span> <span class="s">&#39;/tmp/manager-rest-tests-storage.json&#39;</span>
+
+<span class="n">NODES</span> <span class="o">=</span> <span class="s">&#39;nodes&#39;</span>
+<span class="n">NODE_INSTANCES</span> <span class="o">=</span> <span class="s">&#39;node_instances&#39;</span>
+<span class="n">BLUEPRINTS</span> <span class="o">=</span> <span class="s">&#39;blueprints&#39;</span>
+<span class="n">DEPLOYMENTS</span> <span class="o">=</span> <span class="s">&#39;deployments&#39;</span>
+<span class="n">EXECUTIONS</span> <span class="o">=</span> <span class="s">&#39;executions&#39;</span>
+<span class="n">PROVIDER_CONTEXT</span> <span class="o">=</span> <span class="s">&#39;provider_context&#39;</span>
+<span class="n">PROVIDER_CONTEXT_ID</span> <span class="o">=</span> <span class="s">&#39;1&#39;</span>
+
+
+<div class="viewcode-block" id="FileStorageManager"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager">[docs]</a><span class="k">class</span> <span class="nc">FileStorageManager</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    file based storage manager for tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_path</span> <span class="o">=</span> <span class="n">storage_path</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">storage_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">storage_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">NODES</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="n">NODE_INSTANCES</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="n">BLUEPRINTS</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="n">DEPLOYMENTS</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="n">EXECUTIONS</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="n">PROVIDER_CONTEXT</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_file</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_path</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">deserialized_data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">DeploymentNode</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">DeploymentNodeInstance</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span>
+                 <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">BlueprintState</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">Deployment</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">Execution</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">deserialized_data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">ProviderContext</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+
+            <span class="k">return</span> <span class="n">deserialized_data</span>
+
+    <span class="k">def</span> <span class="nf">_dump_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">serialized_data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span>
+                                      <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]</span> <span class="o">=</span>\
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]</span> <span class="o">=</span>\
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]</span> <span class="o">=</span>\
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">serialized_data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">serialized_data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileStorageManager.node_instances_list"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.node_instances_list">[docs]</a>    <span class="k">def</span> <span class="nf">node_instances_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">][</span><span class="n">node_id</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;Node {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_node_instances"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_node_instances">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">deployment_id</span> <span class="o">==</span> <span class="n">deployment_id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">instances</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_nodes"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">get_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()[</span><span class="n">NODES</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">deployment_id</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">x</span><span class="o">.</span><span class="n">deployment_id</span> <span class="o">==</span> <span class="n">deployment_id</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">nodes</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.put_node"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_node">[docs]</a>    <span class="k">def</span> <span class="nf">put_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="s">&#39;{0}_{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Node {0} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_id</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.put_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">put_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Node {0} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_id</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.update_execution_status"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.update_execution_status">[docs]</a>    <span class="k">def</span> <span class="nf">update_execution_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">execution_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&quot;Execution {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">execution_id</span><span class="p">))</span>
+
+        <span class="n">execution</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">][</span><span class="n">execution_id</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">updated_execution</span> <span class="o">=</span> <span class="n">Execution</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">],</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;deployment_id&#39;</span><span class="p">],</span>
+            <span class="n">internal_workflow_id</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;internal_workflow_id&#39;</span><span class="p">],</span>
+            <span class="n">workflow_id</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;workflow_id&#39;</span><span class="p">],</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;blueprint_id&#39;</span><span class="p">],</span>
+            <span class="n">created_at</span><span class="o">=</span><span class="n">execution</span><span class="p">[</span><span class="s">&#39;created_at&#39;</span><span class="p">],</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+            <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">][</span><span class="n">execution_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_execution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.update_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.update_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">update_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&quot;Node {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">prev_instance</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">][</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="n">deployment_id</span> <span class="o">=</span> <span class="n">prev_instance</span><span class="o">.</span><span class="n">deployment_id</span>
+        <span class="n">prev_rt_info</span> <span class="o">=</span> <span class="n">prev_instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()[</span><span class="s">&#39;runtime_properties&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">merged_rt_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">prev_rt_info</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">+</span>
+                              <span class="n">node</span><span class="o">.</span><span class="n">runtime_properties</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">node</span>\
+            <span class="o">.</span><span class="n">runtime_properties</span> <span class="k">else</span> <span class="n">prev_rt_info</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">state</span> <span class="ow">or</span> <span class="n">prev_instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()[</span><span class="s">&#39;state&#39;</span><span class="p">]</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">DeploymentNodeInstance</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">node_id</span><span class="o">=</span><span class="n">prev_instance</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span>
+            <span class="n">relationships</span><span class="o">=</span><span class="n">prev_instance</span><span class="o">.</span><span class="n">relationships</span><span class="p">,</span>
+            <span class="n">host_id</span><span class="o">=</span><span class="n">prev_instance</span><span class="o">.</span><span class="n">host_id</span><span class="p">,</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="n">deployment_id</span><span class="p">,</span>
+            <span class="n">runtime_properties</span><span class="o">=</span><span class="n">merged_rt_info</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">version</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">][</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.blueprints_list"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.blueprints_list">[docs]</a>    <span class="k">def</span> <span class="nf">blueprints_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.deployments_list"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.deployments_list">[docs]</a>    <span class="k">def</span> <span class="nf">deployments_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.executions_list"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.executions_list">[docs]</a>    <span class="k">def</span> <span class="nf">executions_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_blueprint_deployments"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_blueprint_deployments">[docs]</a>    <span class="k">def</span> <span class="nf">get_blueprint_deployments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="n">deployments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deployments_list</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">deployment</span> <span class="k">for</span> <span class="n">deployment</span> <span class="ow">in</span> <span class="n">deployments</span>
+                <span class="k">if</span> <span class="n">deployment</span><span class="o">.</span><span class="n">blueprint_id</span> <span class="o">==</span> <span class="n">blueprint_id</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_deployment_executions"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_deployment_executions">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment_executions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">executions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">executions_list</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">execution</span> <span class="k">for</span> <span class="n">execution</span> <span class="ow">in</span> <span class="n">executions</span> <span class="k">if</span> <span class="n">execution</span>
+                <span class="o">.</span><span class="n">deployment_id</span> <span class="o">==</span> <span class="n">deployment_id</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">blueprint_id</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]:</span>
+            <span class="n">bp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">][</span><span class="n">blueprint_id</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">BlueprintState</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">bp</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">bp</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;Blueprint {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">deployment_id</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]:</span>
+            <span class="n">dep</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">][</span><span class="n">deployment_id</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">Deployment</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dep</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;Deployment {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_execution"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_execution">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">execution_id</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">][</span><span class="n">execution_id</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;Execution {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">execution_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.put_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">put_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">blueprint</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Blueprint {0} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">BLUEPRINTS</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">blueprint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.put_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">put_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">deployment</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Deployment {0} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">DEPLOYMENTS</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">deployment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.put_execution"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_execution">[docs]</a>    <span class="k">def</span> <span class="nf">put_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span> <span class="n">execution</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">execution_id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Execution {0} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">execution_id</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">EXECUTIONS</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">execution_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">execution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.delete_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.delete_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">delete_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_object</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">BLUEPRINTS</span><span class="p">,</span> <span class="s">&#39;Blueprint&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.delete_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.delete_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">delete_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">deployment_id</span> <span class="o">==</span> <span class="n">deployment_id</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">NODE_INSTANCES</span><span class="p">][</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">deployment_id</span> <span class="o">==</span> <span class="n">deployment_id</span><span class="p">:</span>
+                <span class="n">node_id</span> <span class="o">=</span> <span class="s">&#39;{0}_{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">NODES</span><span class="p">][</span><span class="n">node_id</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_object</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">DEPLOYMENTS</span><span class="p">,</span> <span class="s">&#39;Deployment&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.delete_execution"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.delete_execution">[docs]</a>    <span class="k">def</span> <span class="nf">delete_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_object</span><span class="p">(</span><span class="n">execution_id</span><span class="p">,</span> <span class="n">EXECUTIONS</span><span class="p">,</span> <span class="s">&#39;Execution&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.delete_node"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.delete_node">[docs]</a>    <span class="k">def</span> <span class="nf">delete_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_object</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">NODES</span><span class="p">,</span> <span class="s">&#39;Node&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.delete_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.delete_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">delete_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_object</span><span class="p">(</span><span class="n">node_instance_id</span><span class="p">,</span> <span class="n">NODE_INSTANCES</span><span class="p">,</span> <span class="s">&#39;Node&#39;</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_delete_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">object_type_name</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">object_id</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">object_type</span><span class="p">]:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">object_type</span><span class="p">][</span><span class="n">object_id</span><span class="p">]</span>
+            <span class="k">del</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">object_type</span><span class="p">][</span><span class="n">object_id</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;{0} {1} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_type_name</span><span class="p">,</span> <span class="n">object_id</span><span class="p">))</span>
+
+<div class="viewcode-block" id="FileStorageManager.put_provider_context"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.put_provider_context">[docs]</a>    <span class="k">def</span> <span class="nf">put_provider_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">provider_context</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">PROVIDER_CONTEXT_ID</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Provider context already set&#39;</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">][</span><span class="n">PROVIDER_CONTEXT_ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">provider_context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dump_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileStorageManager.get_provider_context"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.FileStorageManager.get_provider_context">[docs]</a>    <span class="k">def</span> <span class="nf">get_provider_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">PROVIDER_CONTEXT_ID</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">PROVIDER_CONTEXT</span><span class="p">][</span><span class="n">PROVIDER_CONTEXT_ID</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+            <span class="s">&quot;Provider context not set&quot;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="create"><a class="viewcode-back" href="../../index.html#manager_rest.file_storage_manager.create">[docs]</a><span class="k">def</span> <span class="nf">create</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">FileStorageManager</span><span class="p">(</span><span class="n">STORAGE_FILE_PATH</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

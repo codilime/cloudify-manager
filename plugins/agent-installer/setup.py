@@ -17,14 +17,6 @@ __author__ = 'elip'
 
 from setuptools import setup
 
-
-PLUGINS_COMMON_VERSION = "3.0"
-PLUGINS_COMMON_BRANCH = "develop"
-PLUGINS_COMMON = "https://github.com/cloudify-cosmo/cloudify-plugins-common" \
-                 "/tarball/{0}#egg=cloudify-plugins-common-{1}".format(
-                     PLUGINS_COMMON_BRANCH, PLUGINS_COMMON_VERSION)
-
-
 setup(
     name='cloudify-agent-installer-plugin',
     version='3.0',
@@ -34,7 +26,7 @@ setup(
     license='LICENSE',
     description='Plugin for installing a Cloudify agent on a machine',
     install_requires=[
-        'cloudify-plugins-common',
+        'cloudify-plugins-common==3.0',
         'fabric==1.8.3',
         'jinja2==2.7.2'
     ],
@@ -42,5 +34,4 @@ setup(
         "nose",
         "python-vagrant"
     ],
-    dependency_links=[PLUGINS_COMMON]
 )

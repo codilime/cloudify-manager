@@ -1,0 +1,1051 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to cloudify-rest-service’s documentation! &mdash; cloudify-rest-service 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-rest-service 3.0 documentation" href="#"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="#" class="fa fa-home"> cloudify-rest-service</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="#">cloudify-rest-service</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+      
+    <li>Welcome to cloudify-rest-service&#8217;s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <div class="section" id="welcome-to-cloudify-rest-service-s-documentation">
+<h1>Welcome to cloudify-rest-service&#8217;s documentation!<a class="headerlink" href="#welcome-to-cloudify-rest-service-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<span class="target" id="module-manager_rest.blueprints_manager"></span><dl class="exception">
+<dt id="manager_rest.blueprints_manager.DslParseException">
+<em class="property">exception </em><tt class="descclassname">manager_rest.blueprints_manager.</tt><tt class="descname">DslParseException</tt><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#DslParseException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.DslParseException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.blueprints_manager.BlueprintAlreadyExistsException">
+<em class="property">exception </em><tt class="descclassname">manager_rest.blueprints_manager.</tt><tt class="descname">BlueprintAlreadyExistsException</tt><big>(</big><em>blueprint_id</em>, <em>*args</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintAlreadyExistsException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintAlreadyExistsException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager">
+<em class="property">class </em><tt class="descclassname">manager_rest.blueprints_manager.</tt><tt class="descname">BlueprintsManager</tt><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="attribute">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.sm">
+<tt class="descname">sm</tt><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.sm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.sm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.blueprints_list">
+<tt class="descname">blueprints_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.blueprints_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.blueprints_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.deployments_list">
+<tt class="descname">deployments_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.deployments_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.deployments_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.executions_list">
+<tt class="descname">executions_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.executions_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.executions_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.get_blueprint">
+<tt class="descname">get_blueprint</tt><big>(</big><em>blueprint_id</em>, <em>fields=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.get_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.get_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.get_deployment">
+<tt class="descname">get_deployment</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.get_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.get_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.get_execution">
+<tt class="descname">get_execution</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.get_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.get_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.get_deployment_executions">
+<tt class="descname">get_deployment_executions</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.get_deployment_executions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.get_deployment_executions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.publish_blueprint">
+<tt class="descname">publish_blueprint</tt><big>(</big><em>dsl_location</em>, <em>alias_mapping_url</em>, <em>resources_base_url</em>, <em>blueprint_id=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.publish_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.publish_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.delete_blueprint">
+<tt class="descname">delete_blueprint</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.delete_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.delete_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.delete_deployment">
+<tt class="descname">delete_deployment</tt><big>(</big><em>deployment_id</em>, <em>ignore_live_nodes=False</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.delete_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.delete_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.validate_blueprint">
+<tt class="descname">validate_blueprint</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.validate_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.validate_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.execute_workflow">
+<tt class="descname">execute_workflow</tt><big>(</big><em>deployment_id</em>, <em>workflow_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.execute_workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.execute_workflow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.cancel_workflow">
+<tt class="descname">cancel_workflow</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.cancel_workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.cancel_workflow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.blueprints_manager.BlueprintsManager.create_deployment">
+<tt class="descname">create_deployment</tt><big>(</big><em>blueprint_id</em>, <em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#BlueprintsManager.create_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.BlueprintsManager.create_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.blueprints_manager.teardown_blueprints_manager">
+<tt class="descclassname">manager_rest.blueprints_manager.</tt><tt class="descname">teardown_blueprints_manager</tt><big>(</big><em>exception</em><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#teardown_blueprints_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.teardown_blueprints_manager" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.blueprints_manager.get_blueprints_manager">
+<tt class="descclassname">manager_rest.blueprints_manager.</tt><tt class="descname">get_blueprints_manager</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/blueprints_manager.html#get_blueprints_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.blueprints_manager.get_blueprints_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the current blueprints manager
+or create one if none exists for the current app context</p>
+</dd></dl>
+
+<span class="target" id="module-manager_rest.es_storage_manager"></span><dl class="class">
+<dt id="manager_rest.es_storage_manager.ESStorageManager">
+<em class="property">class </em><tt class="descclassname">manager_rest.es_storage_manager.</tt><tt class="descname">ESStorageManager</tt><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.node_instances_list">
+<tt class="descname">node_instances_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.node_instances_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.node_instances_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.blueprints_list">
+<tt class="descname">blueprints_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.blueprints_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.blueprints_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.deployments_list">
+<tt class="descname">deployments_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.deployments_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.deployments_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.executions_list">
+<tt class="descname">executions_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.executions_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.executions_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_blueprint_deployments">
+<tt class="descname">get_blueprint_deployments</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_blueprint_deployments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_blueprint_deployments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_deployment_executions">
+<tt class="descname">get_deployment_executions</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_deployment_executions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_deployment_executions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_node_instance">
+<tt class="descname">get_node_instance</tt><big>(</big><em>node_instance_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_node_instances">
+<tt class="descname">get_node_instances</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_node_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_node_instances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_nodes">
+<tt class="descname">get_nodes</tt><big>(</big><em>deployment_id=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_nodes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_blueprint">
+<tt class="descname">get_blueprint</tt><big>(</big><em>blueprint_id</em>, <em>fields=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_deployment">
+<tt class="descname">get_deployment</tt><big>(</big><em>deployment_id</em>, <em>fields=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_execution">
+<tt class="descname">get_execution</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_blueprint">
+<tt class="descname">put_blueprint</tt><big>(</big><em>blueprint_id</em>, <em>blueprint</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_deployment">
+<tt class="descname">put_deployment</tt><big>(</big><em>deployment_id</em>, <em>deployment</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_execution">
+<tt class="descname">put_execution</tt><big>(</big><em>execution_id</em>, <em>execution</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_node">
+<tt class="descname">put_node</tt><big>(</big><em>node</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_node_instance">
+<tt class="descname">put_node_instance</tt><big>(</big><em>node_instance</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.delete_blueprint">
+<tt class="descname">delete_blueprint</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.delete_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.delete_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.update_execution_status">
+<tt class="descname">update_execution_status</tt><big>(</big><em>execution_id</em>, <em>status</em>, <em>error</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.update_execution_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.update_execution_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.delete_deployment">
+<tt class="descname">delete_deployment</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.delete_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.delete_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.delete_execution">
+<tt class="descname">delete_execution</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.delete_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.delete_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.delete_node">
+<tt class="descname">delete_node</tt><big>(</big><em>node_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.delete_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.delete_node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.delete_node_instance">
+<tt class="descname">delete_node_instance</tt><big>(</big><em>node_instance_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.delete_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.delete_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.update_node_instance">
+<tt class="descname">update_node_instance</tt><big>(</big><em>node</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.update_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.update_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.put_provider_context">
+<tt class="descname">put_provider_context</tt><big>(</big><em>provider_context</em><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.put_provider_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.put_provider_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.es_storage_manager.ESStorageManager.get_provider_context">
+<tt class="descname">get_provider_context</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#ESStorageManager.get_provider_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.ESStorageManager.get_provider_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.es_storage_manager.create">
+<tt class="descclassname">manager_rest.es_storage_manager.</tt><tt class="descname">create</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/es_storage_manager.html#create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.es_storage_manager.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-manager_rest.file_storage_manager"></span><dl class="class">
+<dt id="manager_rest.file_storage_manager.FileStorageManager">
+<em class="property">class </em><tt class="descclassname">manager_rest.file_storage_manager.</tt><tt class="descname">FileStorageManager</tt><big>(</big><em>storage_path</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>file based storage manager for tests.</p>
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.node_instances_list">
+<tt class="descname">node_instances_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.node_instances_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.node_instances_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_node_instance">
+<tt class="descname">get_node_instance</tt><big>(</big><em>node_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_node_instances">
+<tt class="descname">get_node_instances</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_node_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_node_instances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_nodes">
+<tt class="descname">get_nodes</tt><big>(</big><em>deployment_id=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_nodes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_node">
+<tt class="descname">put_node</tt><big>(</big><em>node</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_node_instance">
+<tt class="descname">put_node_instance</tt><big>(</big><em>node</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.update_execution_status">
+<tt class="descname">update_execution_status</tt><big>(</big><em>execution_id</em>, <em>status</em>, <em>error</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.update_execution_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.update_execution_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.update_node_instance">
+<tt class="descname">update_node_instance</tt><big>(</big><em>node</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.update_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.update_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.blueprints_list">
+<tt class="descname">blueprints_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.blueprints_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.blueprints_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.deployments_list">
+<tt class="descname">deployments_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.deployments_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.deployments_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.executions_list">
+<tt class="descname">executions_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.executions_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.executions_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_blueprint_deployments">
+<tt class="descname">get_blueprint_deployments</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_blueprint_deployments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_blueprint_deployments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_deployment_executions">
+<tt class="descname">get_deployment_executions</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_deployment_executions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_deployment_executions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_blueprint">
+<tt class="descname">get_blueprint</tt><big>(</big><em>blueprint_id</em>, <em>fields=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_deployment">
+<tt class="descname">get_deployment</tt><big>(</big><em>deployment_id</em>, <em>fields=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_execution">
+<tt class="descname">get_execution</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_blueprint">
+<tt class="descname">put_blueprint</tt><big>(</big><em>blueprint_id</em>, <em>blueprint</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_deployment">
+<tt class="descname">put_deployment</tt><big>(</big><em>deployment_id</em>, <em>deployment</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_execution">
+<tt class="descname">put_execution</tt><big>(</big><em>execution_id</em>, <em>execution</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.delete_blueprint">
+<tt class="descname">delete_blueprint</tt><big>(</big><em>blueprint_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.delete_blueprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.delete_blueprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.delete_deployment">
+<tt class="descname">delete_deployment</tt><big>(</big><em>deployment_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.delete_deployment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.delete_deployment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.delete_execution">
+<tt class="descname">delete_execution</tt><big>(</big><em>execution_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.delete_execution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.delete_execution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.delete_node">
+<tt class="descname">delete_node</tt><big>(</big><em>node_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.delete_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.delete_node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.delete_node_instance">
+<tt class="descname">delete_node_instance</tt><big>(</big><em>node_instance_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.delete_node_instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.delete_node_instance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.put_provider_context">
+<tt class="descname">put_provider_context</tt><big>(</big><em>provider_context</em><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.put_provider_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.put_provider_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.file_storage_manager.FileStorageManager.get_provider_context">
+<tt class="descname">get_provider_context</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#FileStorageManager.get_provider_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.FileStorageManager.get_provider_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.file_storage_manager.create">
+<tt class="descclassname">manager_rest.file_storage_manager.</tt><tt class="descname">create</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/file_storage_manager.html#create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.file_storage_manager.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<span class="target" id="module-manager_rest.manager_exceptions"></span><dl class="exception">
+<dt id="manager_rest.manager_exceptions.ManagerException">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">ManagerException</tt><big>(</big><em>http_code</em>, <em>error_code</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#ManagerException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.ManagerException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.ConflictError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">ConflictError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#ConflictError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.ConflictError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.NotFoundError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">NotFoundError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#NotFoundError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.NotFoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.DependentExistsError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">DependentExistsError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#DependentExistsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.DependentExistsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.NonexistentWorkflowError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">NonexistentWorkflowError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#NonexistentWorkflowError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.NonexistentWorkflowError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.UnsupportedContentTypeError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">UnsupportedContentTypeError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#UnsupportedContentTypeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.UnsupportedContentTypeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.BadParametersError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">BadParametersError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#BadParametersError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.BadParametersError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.InvalidBlueprintError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">InvalidBlueprintError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#InvalidBlueprintError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.InvalidBlueprintError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="manager_rest.manager_exceptions.ExistingRunningExecutionError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.manager_exceptions.</tt><tt class="descname">ExistingRunningExecutionError</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/manager_exceptions.html#ExistingRunningExecutionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.manager_exceptions.ExistingRunningExecutionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#manager_rest.manager_exceptions.ManagerException" title="manager_rest.manager_exceptions.ManagerException"><tt class="xref py py-class docutils literal"><span class="pre">manager_rest.manager_exceptions.ManagerException</span></tt></a></p>
+</dd></dl>
+
+<span class="target" id="module-manager_rest.resources"></span><dl class="function">
+<dt id="manager_rest.resources.exceptions_handled">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">exceptions_handled</tt><big>(</big><em>func</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#exceptions_handled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.exceptions_handled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.abort_workflow_service_operation">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">abort_workflow_service_operation</tt><big>(</big><em>workflow_service_error</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#abort_workflow_service_operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.abort_workflow_service_operation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.abort_error">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">abort_error</tt><big>(</big><em>error</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#abort_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.abort_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.verify_json_content_type">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">verify_json_content_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#verify_json_content_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.verify_json_content_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.verify_parameter_in_request_body">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">verify_parameter_in_request_body</tt><big>(</big><em>param</em>, <em>request_json</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#verify_parameter_in_request_body"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.verify_parameter_in_request_body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.verify_and_convert_bool">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">verify_and_convert_bool</tt><big>(</big><em>attribute_name</em>, <em>str_bool</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#verify_and_convert_bool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.verify_and_convert_bool" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.resources.setup_resources">
+<tt class="descclassname">manager_rest.resources.</tt><tt class="descname">setup_resources</tt><big>(</big><em>api</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#setup_resources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.setup_resources" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.BlueprintsUpload">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">BlueprintsUpload</tt><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsUpload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsUpload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsUpload.do_request">
+<tt class="descname">do_request</tt><big>(</big><em>blueprint_id=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsUpload.do_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsUpload.do_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.BlueprintsIdArchive">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">BlueprintsIdArchive</tt><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdArchive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdArchive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsIdArchive.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdArchive.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdArchive.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download blueprint&#8217;s archive</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.BlueprintsIdArchive.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.BlueprintsIdArchive.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Blueprints">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Blueprints</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Blueprints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Blueprints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Blueprints.get">
+<tt class="descname">get</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Blueprints.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Blueprints.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List uploaded blueprints</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.Blueprints.post">
+<tt class="descname">post</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Blueprints.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Blueprints.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload a blueprint</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Blueprints.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'POST']</em><a class="headerlink" href="#manager_rest.resources.Blueprints.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.BlueprintsIdSource">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">BlueprintsIdSource</tt><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsIdSource.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdSource.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdSource.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get blueprint&#8217;s source (main yaml file) by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.BlueprintsIdSource.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.BlueprintsIdSource.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.BlueprintsId">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">BlueprintsId</tt><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsId.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsId.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsId.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get blueprint by id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsId.put">
+<tt class="descname">put</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsId.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsId.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload a blueprint (id specified)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsId.delete">
+<tt class="descname">delete</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsId.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsId.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete blueprint by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.BlueprintsId.methods">
+<tt class="descname">methods</tt><em class="property"> = ['DELETE', 'GET', 'PUT']</em><a class="headerlink" href="#manager_rest.resources.BlueprintsId.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.BlueprintsIdValidate">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">BlueprintsIdValidate</tt><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdValidate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdValidate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.BlueprintsIdValidate.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#BlueprintsIdValidate.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.BlueprintsIdValidate.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate blueprint by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.BlueprintsIdValidate.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.BlueprintsIdValidate.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.ExecutionsId">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">ExecutionsId</tt><a class="reference internal" href="_modules/manager_rest/resources.html#ExecutionsId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ExecutionsId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.ExecutionsId.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#ExecutionsId.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ExecutionsId.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get execution by id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.ExecutionsId.post">
+<tt class="descname">post</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#ExecutionsId.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ExecutionsId.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply execution action (cancel) by id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.ExecutionsId.patch">
+<tt class="descname">patch</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#ExecutionsId.patch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ExecutionsId.patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update execution status by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.ExecutionsId.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'PATCH', 'POST']</em><a class="headerlink" href="#manager_rest.resources.ExecutionsId.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Deployments">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Deployments</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Deployments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Deployments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Deployments.get">
+<tt class="descname">get</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Deployments.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Deployments.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List deployments</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Deployments.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.Deployments.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.DeploymentsId">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">DeploymentsId</tt><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsId.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsId.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsId.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get deployment by id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsId.put">
+<tt class="descname">put</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsId.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsId.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a deployment</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsId.delete">
+<tt class="descname">delete</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsId.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsId.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete deployment by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.DeploymentsId.methods">
+<tt class="descname">methods</tt><em class="property"> = ['DELETE', 'GET', 'PUT']</em><a class="headerlink" href="#manager_rest.resources.DeploymentsId.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Nodes">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Nodes</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Nodes.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Nodes.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Nodes.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List nodes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Nodes.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.Nodes.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.NodeInstances">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">NodeInstances</tt><a class="reference internal" href="_modules/manager_rest/resources.html#NodeInstances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.NodeInstances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.NodeInstances.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#NodeInstances.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.NodeInstances.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List node instances</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.NodeInstances.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.NodeInstances.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.NodeInstancesId">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">NodeInstancesId</tt><a class="reference internal" href="_modules/manager_rest/resources.html#NodeInstancesId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.NodeInstancesId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.NodeInstancesId.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#NodeInstancesId.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.NodeInstancesId.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get node instance by id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.NodeInstancesId.patch">
+<tt class="descname">patch</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#NodeInstancesId.patch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.NodeInstancesId.patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update node instance by id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.NodeInstancesId.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'PATCH']</em><a class="headerlink" href="#manager_rest.resources.NodeInstancesId.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.DeploymentsIdExecutions">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">DeploymentsIdExecutions</tt><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsIdExecutions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsIdExecutions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsIdExecutions.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsIdExecutions.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsIdExecutions.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List deployment executions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsIdExecutions.post">
+<tt class="descname">post</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsIdExecutions.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsIdExecutions.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a workflow</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.DeploymentsIdExecutions.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'POST']</em><a class="headerlink" href="#manager_rest.resources.DeploymentsIdExecutions.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.DeploymentsIdWorkflows">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">DeploymentsIdWorkflows</tt><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsIdWorkflows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsIdWorkflows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.DeploymentsIdWorkflows.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#DeploymentsIdWorkflows.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.DeploymentsIdWorkflows.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List deployment workflows</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.DeploymentsIdWorkflows.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.DeploymentsIdWorkflows.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Events">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Events</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Events.get">
+<tt class="descname">get</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Events.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Events.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>List events for the provided Elasticsearch query</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.Events.post">
+<tt class="descname">post</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Events.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Events.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>List events for the provided Elasticsearch query</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Events.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'POST']</em><a class="headerlink" href="#manager_rest.resources.Events.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Search">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Search</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Search.post">
+<tt class="descname">post</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Search.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Search.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search using an Elasticsearch query</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Search.methods">
+<tt class="descname">methods</tt><em class="property"> = ['POST']</em><a class="headerlink" href="#manager_rest.resources.Search.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.Status">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">Status</tt><a class="reference internal" href="_modules/manager_rest/resources.html#Status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.Status.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#Status.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.Status.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the status of running system services</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.Status.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET']</em><a class="headerlink" href="#manager_rest.resources.Status.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.resources.ProviderContext">
+<em class="property">class </em><tt class="descclassname">manager_rest.resources.</tt><tt class="descname">ProviderContext</tt><a class="reference internal" href="_modules/manager_rest/resources.html#ProviderContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ProviderContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_restful.Resource</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.resources.ProviderContext.get">
+<tt class="descname">get</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#ProviderContext.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ProviderContext.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get provider context</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.resources.ProviderContext.post">
+<tt class="descname">post</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/manager_rest/resources.html#ProviderContext.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.resources.ProviderContext.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create provider context</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="manager_rest.resources.ProviderContext.methods">
+<tt class="descname">methods</tt><em class="property"> = ['GET', 'POST']</em><a class="headerlink" href="#manager_rest.resources.ProviderContext.methods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-manager_rest.workflow_client"></span><dl class="exception">
+<dt id="manager_rest.workflow_client.WorkflowServiceError">
+<em class="property">exception </em><tt class="descclassname">manager_rest.workflow_client.</tt><tt class="descname">WorkflowServiceError</tt><big>(</big><em>status_code</em>, <em>json</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowServiceError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowServiceError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="manager_rest.workflow_client.WorkflowClient">
+<em class="property">class </em><tt class="descclassname">manager_rest.workflow_client.</tt><tt class="descname">WorkflowClient</tt><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<dl class="method">
+<dt id="manager_rest.workflow_client.WorkflowClient.execute_workflow">
+<tt class="descname">execute_workflow</tt><big>(</big><em>name</em>, <em>workflow</em>, <em>plan</em>, <em>blueprint_id=None</em>, <em>deployment_id=None</em>, <em>execution_id=None</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient.execute_workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient.execute_workflow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.workflow_client.WorkflowClient.validate_workflows">
+<tt class="descname">validate_workflows</tt><big>(</big><em>plan</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient.validate_workflows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient.validate_workflows" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.workflow_client.WorkflowClient.get_workflow_status">
+<tt class="descname">get_workflow_status</tt><big>(</big><em>workflow_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient.get_workflow_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient.get_workflow_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.workflow_client.WorkflowClient.get_workflows_statuses">
+<tt class="descname">get_workflows_statuses</tt><big>(</big><em>workflows_ids</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient.get_workflows_statuses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient.get_workflows_statuses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="manager_rest.workflow_client.WorkflowClient.cancel_workflow">
+<tt class="descname">cancel_workflow</tt><big>(</big><em>workflow_id</em><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#WorkflowClient.cancel_workflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.WorkflowClient.cancel_workflow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="manager_rest.workflow_client.workflow_client">
+<tt class="descclassname">manager_rest.workflow_client.</tt><tt class="descname">workflow_client</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/manager_rest/workflow_client.html#workflow_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#manager_rest.workflow_client.workflow_client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,1308 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>manager_rest.resources &mdash; cloudify-rest-service 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-rest-service 3.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> cloudify-rest-service</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">cloudify-rest-service</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>manager_rest.resources</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for manager_rest.resources</h1><div class="highlight"><pre>
+<span class="c">#########</span>
+<span class="c"># Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># you may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#  * See the License for the specific language governing permissions and</span>
+<span class="c">#  * limitations under the License.</span>
+<span class="c">#</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;dan&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+
+<span class="kn">import</span> <span class="nn">elasticsearch</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">request</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">make_response</span>
+<span class="kn">from</span> <span class="nn">flask.ext.restful</span> <span class="kn">import</span> <span class="n">Resource</span><span class="p">,</span> <span class="n">abort</span><span class="p">,</span> <span class="n">marshal_with</span><span class="p">,</span> <span class="n">marshal</span><span class="p">,</span> <span class="n">reqparse</span>
+<span class="kn">from</span> <span class="nn">flask_restful_swagger</span> <span class="kn">import</span> <span class="n">swagger</span>
+
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">responses</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">requests_schema</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">chunked</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">manager_exceptions</span>
+<span class="kn">from</span> <span class="nn">manager_rest.storage_manager</span> <span class="kn">import</span> <span class="n">get_storage_manager</span>
+<span class="kn">from</span> <span class="nn">manager_rest.workflow_client</span> <span class="kn">import</span> <span class="n">WorkflowServiceError</span>
+<span class="kn">from</span> <span class="nn">manager_rest.blueprints_manager</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DslParseException</span><span class="p">,</span>
+                                             <span class="n">get_blueprints_manager</span><span class="p">)</span>
+
+
+<span class="n">CONVENTION_APPLICATION_BLUEPRINT_FILE</span> <span class="o">=</span> <span class="s">&#39;blueprint.yaml&#39;</span>
+
+
+<div class="viewcode-block" id="exceptions_handled"><a class="viewcode-back" href="../../index.html#manager_rest.resources.exceptions_handled">[docs]</a><span class="k">def</span> <span class="nf">exceptions_handled</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">DependentExistsError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NonexistentWorkflowError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">UnsupportedContentTypeError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">InvalidBlueprintError</span><span class="p">,</span>
+                <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ExistingRunningExecutionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">abort_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">WorkflowServiceError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">abort_workflow_service_operation</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+</div>
+<div class="viewcode-block" id="abort_workflow_service_operation"><a class="viewcode-back" href="../../index.html#manager_rest.resources.abort_workflow_service_operation">[docs]</a><span class="k">def</span> <span class="nf">abort_workflow_service_operation</span><span class="p">(</span><span class="n">workflow_service_error</span><span class="p">):</span>
+    <span class="n">abort</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span>
+          <span class="n">message</span><span class="o">=</span><span class="s">&#39;Workflow service failed with status code {0},&#39;</span>
+                  <span class="s">&#39; full response {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                      <span class="n">workflow_service_error</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span>
+                      <span class="n">workflow_service_error</span><span class="o">.</span><span class="n">json</span><span class="p">),</span>
+          <span class="n">error_code</span><span class="o">=</span><span class="n">manager_exceptions</span><span class="o">.</span><span class="n">INTERNAL_SERVER_ERROR_CODE</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="abort_error"><a class="viewcode-back" href="../../index.html#manager_rest.resources.abort_error">[docs]</a><span class="k">def</span> <span class="nf">abort_error</span><span class="p">(</span><span class="n">error</span><span class="p">):</span>
+    <span class="n">abort</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">http_code</span><span class="p">,</span>
+          <span class="n">message</span><span class="o">=</span><span class="s">&#39;{0}: {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">http_code</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)),</span>
+          <span class="n">error_code</span><span class="o">=</span><span class="n">error</span><span class="o">.</span><span class="n">error_code</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="verify_json_content_type"><a class="viewcode-back" href="../../index.html#manager_rest.resources.verify_json_content_type">[docs]</a><span class="k">def</span> <span class="nf">verify_json_content_type</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">content_type</span> <span class="o">!=</span> <span class="s">&#39;application/json&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">UnsupportedContentTypeError</span><span class="p">(</span>
+            <span class="s">&#39;Content type must be application/json&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="verify_parameter_in_request_body"><a class="viewcode-back" href="../../index.html#manager_rest.resources.verify_parameter_in_request_body">[docs]</a><span class="k">def</span> <span class="nf">verify_parameter_in_request_body</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">request_json</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">request_json</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+            <span class="s">&#39;Missing {0} in json request body&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="verify_and_convert_bool"><a class="viewcode-back" href="../../index.html#manager_rest.resources.verify_and_convert_bool">[docs]</a><span class="k">def</span> <span class="nf">verify_and_convert_bool</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">,</span> <span class="n">str_bool</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">str_bool</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="n">str_bool</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;false&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+        <span class="s">&#39;{0} must be &lt;true/false&gt;, got {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">,</span> <span class="n">str_bool</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="setup_resources"><a class="viewcode-back" href="../../index.html#manager_rest.resources.setup_resources">[docs]</a><span class="k">def</span> <span class="nf">setup_resources</span><span class="p">(</span><span class="n">api</span><span class="p">):</span>
+    <span class="n">api</span> <span class="o">=</span> <span class="n">swagger</span><span class="o">.</span><span class="n">docs</span><span class="p">(</span><span class="n">api</span><span class="p">,</span>
+                       <span class="n">apiVersion</span><span class="o">=</span><span class="s">&#39;0.1&#39;</span><span class="p">,</span>
+                       <span class="n">basePath</span><span class="o">=</span><span class="s">&#39;http://localhost:8100&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Blueprints</span><span class="p">,</span>
+                     <span class="s">&#39;/blueprints&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">BlueprintsId</span><span class="p">,</span>
+                     <span class="s">&#39;/blueprints/&lt;string:blueprint_id&gt;&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">BlueprintsIdArchive</span><span class="p">,</span>
+                     <span class="s">&#39;/blueprints/&lt;string:blueprint_id&gt;/archive&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">BlueprintsIdSource</span><span class="p">,</span>
+                     <span class="s">&#39;/blueprints/&lt;string:blueprint_id&gt;/source&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">BlueprintsIdValidate</span><span class="p">,</span>
+                     <span class="s">&#39;/blueprints/&lt;string:blueprint_id&gt;/validate&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">ExecutionsId</span><span class="p">,</span>
+                     <span class="s">&#39;/executions/&lt;string:execution_id&gt;&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Deployments</span><span class="p">,</span>
+                     <span class="s">&#39;/deployments&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">DeploymentsId</span><span class="p">,</span>
+                     <span class="s">&#39;/deployments/&lt;string:deployment_id&gt;&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">DeploymentsIdExecutions</span><span class="p">,</span>
+                     <span class="s">&#39;/deployments/&lt;string:deployment_id&gt;/executions&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">DeploymentsIdWorkflows</span><span class="p">,</span>
+                     <span class="s">&#39;/deployments/&lt;string:deployment_id&gt;/workflows&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Nodes</span><span class="p">,</span>
+                     <span class="s">&#39;/nodes&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">NodeInstances</span><span class="p">,</span>
+                     <span class="s">&#39;/node-instances&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">NodeInstancesId</span><span class="p">,</span>
+                     <span class="s">&#39;/node-instances/&lt;string:node_instance_id&gt;&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Events</span><span class="p">,</span> <span class="s">&#39;/events&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Search</span><span class="p">,</span> <span class="s">&#39;/search&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">Status</span><span class="p">,</span> <span class="s">&#39;/status&#39;</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">ProviderContext</span><span class="p">,</span> <span class="s">&#39;/provider/context&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="BlueprintsUpload"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsUpload">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsUpload</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="BlueprintsUpload.do_request"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsUpload.do_request">[docs]</a>    <span class="k">def</span> <span class="nf">do_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">file_server_root</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_root</span>
+        <span class="n">archive_target_path</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">file_server_root</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_save_file_locally</span><span class="p">(</span><span class="n">archive_target_path</span><span class="p">)</span>
+            <span class="n">application_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_file_to_file_server</span><span class="p">(</span>
+                <span class="n">file_server_root</span><span class="p">,</span> <span class="n">archive_target_path</span><span class="p">)</span>
+            <span class="n">blueprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_and_submit_blueprint</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span>
+                                                           <span class="n">application_dir</span><span class="p">,</span>
+                                                           <span class="n">blueprint_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_move_archive_to_uploaded_blueprints_dir</span><span class="p">(</span><span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                                          <span class="n">file_server_root</span><span class="p">,</span>
+                                                          <span class="n">archive_target_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">blueprint</span><span class="p">,</span> <span class="mi">201</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">archive_target_path</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">archive_target_path</span><span class="p">)</span>
+</div>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_move_archive_to_uploaded_blueprints_dir</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span>
+                                                 <span class="n">file_server_root</span><span class="p">,</span>
+                                                 <span class="n">archive_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">archive_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Archive [{0}] doesn&#39;t exist - Cannot move &quot;</span>
+                               <span class="s">&quot;archive to uploaded blueprints &quot;</span>
+                               <span class="s">&quot;directory&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">))</span>
+        <span class="n">uploaded_blueprint_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">file_server_root</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_uploaded_blueprints_folder</span><span class="p">,</span>
+            <span class="n">blueprint_id</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">uploaded_blueprint_dir</span><span class="p">)</span>
+        <span class="n">archive_file_name</span> <span class="o">=</span> <span class="s">&#39;{0}.tar.gz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">uploaded_blueprint_dir</span><span class="p">,</span> <span class="n">archive_file_name</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_process_plugins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_server_root</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="n">plugins_directory</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span>
+                                      <span class="s">&quot;blueprints&quot;</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="s">&quot;plugins&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plugins_directory</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">plugins</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">plugins_directory</span><span class="p">,</span> <span class="n">directory</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">plugins_directory</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">plugins_directory</span><span class="p">,</span> <span class="n">directory</span><span class="p">))]</span>
+
+        <span class="k">for</span> <span class="n">plugin_dir</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+            <span class="n">final_zip_name</span> <span class="o">=</span> <span class="s">&#39;{0}.zip&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">))</span>
+            <span class="n">target_zip_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span>
+                                        <span class="s">&quot;blueprints&quot;</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span>
+                                        <span class="s">&#39;plugins&#39;</span><span class="p">,</span> <span class="n">final_zip_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_zip_dir</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">,</span> <span class="n">target_zip_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_zip_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dir_to_zip</span><span class="p">,</span> <span class="n">target_zip_path</span><span class="p">):</span>
+        <span class="n">zipf</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">target_zip_path</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">plugin_dir_base_name</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">dir_to_zip</span><span class="p">)</span>
+            <span class="n">rootlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dir_to_zip</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">plugin_dir_base_name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">base</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">dir_to_zip</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                    <span class="n">fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+                    <span class="n">zipf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fn</span><span class="p">[</span><span class="n">rootlen</span><span class="p">:])</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">zipf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_save_file_locally</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archive_file_name</span><span class="p">):</span>
+        <span class="c"># save uploaded file</span>
+        <span class="k">if</span> <span class="s">&#39;Transfer-Encoding&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">archive_file_name</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">buffered_chunked</span> <span class="ow">in</span> <span class="n">chunked</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">input_stream</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">buffered_chunked</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+                    <span class="s">&#39;Missing application archive in request body&#39;</span><span class="p">)</span>
+            <span class="n">uploaded_file_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">data</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">archive_file_name</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">uploaded_file_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_extract_file_to_file_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_server_root</span><span class="p">,</span>
+                                     <span class="n">archive_target_path</span><span class="p">):</span>
+        <span class="c"># extract application to file server</span>
+        <span class="n">tar</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_target_path</span><span class="p">)</span>
+        <span class="n">tempdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="s">&#39;-blueprint-submit&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tar</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">tempdir</span><span class="p">)</span>
+            <span class="n">archive_file_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">tempdir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">archive_file_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span>
+                    <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempdir</span><span class="p">,</span> <span class="n">archive_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+                    <span class="s">&#39;archive must contain exactly 1 directory&#39;</span><span class="p">)</span>
+            <span class="n">application_dir_base_name</span> <span class="o">=</span> <span class="n">archive_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c"># generating temporary unique name for app dir, to allow multiple</span>
+            <span class="c"># uploads of apps with the same name (as it appears in the file</span>
+            <span class="c"># system, not the app name field inside the blueprint.</span>
+            <span class="c"># the latter is guaranteed to be unique).</span>
+            <span class="n">generated_app_dir_name</span> <span class="o">=</span> <span class="s">&#39;{0}-{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">application_dir_base_name</span><span class="p">,</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+            <span class="n">temp_application_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempdir</span><span class="p">,</span>
+                                             <span class="n">application_dir_base_name</span><span class="p">)</span>
+            <span class="n">temp_application_target_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempdir</span><span class="p">,</span>
+                                                    <span class="n">generated_app_dir_name</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">temp_application_dir</span><span class="p">,</span> <span class="n">temp_application_target_dir</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">temp_application_target_dir</span><span class="p">,</span> <span class="n">file_server_root</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">generated_app_dir_name</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tempdir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_and_submit_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_server_root</span><span class="p">,</span>
+                                      <span class="n">application_dir</span><span class="p">,</span>
+                                      <span class="n">blueprint_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">application_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_application_file</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span>
+                                                          <span class="n">application_dir</span><span class="p">)</span>
+
+        <span class="n">file_server_base_url</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_base_uri</span>
+        <span class="n">dsl_path</span> <span class="o">=</span> <span class="s">&#39;{0}/{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_server_base_url</span><span class="p">,</span> <span class="n">application_file</span><span class="p">)</span>
+        <span class="n">alias_mapping</span> <span class="o">=</span> <span class="s">&#39;{0}/{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_server_base_url</span><span class="p">,</span>
+                                         <span class="s">&#39;cloudify/alias-mappings.yaml&#39;</span><span class="p">)</span>
+        <span class="n">resources_base</span> <span class="o">=</span> <span class="n">file_server_base_url</span> <span class="o">+</span> <span class="s">&#39;/&#39;</span>
+
+        <span class="c"># add to blueprints manager (will also dsl_parse it)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">blueprint</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">publish_blueprint</span><span class="p">(</span>
+                <span class="n">dsl_path</span><span class="p">,</span> <span class="n">alias_mapping</span><span class="p">,</span> <span class="n">resources_base</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">)</span>
+
+            <span class="c"># moving the app directory in the file server to be under a</span>
+            <span class="c"># directory named after the blueprint id</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span> <span class="n">application_dir</span><span class="p">),</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                            <span class="n">file_server_root</span><span class="p">,</span>
+                            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_blueprints_folder</span><span class="p">,</span>
+                            <span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_plugins</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">blueprint</span>
+        <span class="k">except</span> <span class="n">DslParseException</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span> <span class="n">application_dir</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">InvalidBlueprintError</span><span class="p">(</span>
+                <span class="s">&#39;Invalid blueprint - {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_extract_application_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_server_root</span><span class="p">,</span> <span class="n">application_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;application_file_name&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+            <span class="n">application_file</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">unquote</span><span class="p">(</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s">&#39;application_file_name&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">application_file</span> <span class="o">=</span> <span class="s">&#39;{0}/{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">application_dir</span><span class="p">,</span>
+                                                <span class="n">application_file</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">application_file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">full_application_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_server_root</span><span class="p">,</span> <span class="n">application_dir</span><span class="p">)</span>
+            <span class="n">full_application_file</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">full_application_dir</span><span class="p">,</span> <span class="n">CONVENTION_APPLICATION_BLUEPRINT_FILE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">full_application_file</span><span class="p">):</span>
+                <span class="n">application_file</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">application_dir</span><span class="p">,</span> <span class="n">CONVENTION_APPLICATION_BLUEPRINT_FILE</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">application_file</span>
+        <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+            <span class="s">&#39;Missing application_file_name query parameter or &#39;</span>
+            <span class="s">&#39;application directory is missing blueprint.yaml&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="BlueprintsIdArchive"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdArchive">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsIdArchive</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getArchive&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Downloads blueprint as an archive.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsIdArchive.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdArchive.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Download blueprint&#39;s archive</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Verify blueprint exists.</span>
+        <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">})</span>
+        <span class="n">blueprint_path</span> <span class="o">=</span> <span class="s">&#39;{0}/{1}/{2}/{2}.tar.gz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_resources_uri</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_uploaded_blueprints_folder</span><span class="p">,</span>
+            <span class="n">blueprint_id</span><span class="p">)</span>
+
+        <span class="n">local_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_root</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_uploaded_blueprints_folder</span><span class="p">,</span>
+            <span class="n">blueprint_id</span><span class="p">,</span>
+            <span class="s">&#39;</span><span class="si">%s</span><span class="s">.tar.gz&#39;</span> <span class="o">%</span> <span class="n">blueprint_id</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">()</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Content-Description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;File Transfer&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Cache-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;no-cache&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Content-Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;application/octet-stream&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="s">&#39;attachment; filename=</span><span class="si">%s</span><span class="s">.tar.gz&#39;</span> <span class="o">%</span> <span class="n">blueprint_id</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Content-Length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;X-Accel-Redirect&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">blueprint_path</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;X-Accel-Buffering&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;yes&#39;</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+</div></div>
+<div class="viewcode-block" id="Blueprints"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Blueprints">[docs]</a><span class="k">class</span> <span class="nc">Blueprints</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;List[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">__name__</span><span class="p">),</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;list&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a list a submitted blueprints.&quot;</span>
+    <span class="p">)</span>
+<div class="viewcode-block" id="Blueprints.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Blueprints.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List uploaded blueprints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">marshal</span><span class="p">(</span><span class="n">blueprint</span><span class="p">,</span>
+                        <span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span> <span class="k">for</span>
+                <span class="n">blueprint</span> <span class="ow">in</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">blueprints_list</span><span class="p">()]</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;upload&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Submitted blueprint should be a tar &quot;</span>
+              <span class="s">&quot;gzipped directory containing the blueprint.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;application_file_name&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;File name of yaml &#39;</span>
+                                    <span class="s">&#39;containing the &quot;main&quot; blueprint.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;defaultValue&#39;</span><span class="p">:</span> <span class="s">&#39;blueprint.yaml&#39;</span><span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Binary form of the tar &#39;</span>
+                                       <span class="s">&#39;gzipped blueprint directory&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                        <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                        <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;binary&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}</span>
+                    <span class="p">],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/octet-stream&quot;</span>
+        <span class="p">]</span>
+
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="Blueprints.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Blueprints.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload a blueprint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">BlueprintsUpload</span><span class="p">()</span><span class="o">.</span><span class="n">do_request</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="BlueprintsIdSource"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdSource">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsIdSource</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getBlueprintSource&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a blueprint&#39;s source (main yaml file)&quot;</span>
+              <span class="s">&quot;  by the blueprint&#39;s id.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsIdSource.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdSource.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get blueprint&#39;s source (main yaml file) by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;source&#39;</span><span class="p">}</span>
+        <span class="n">blueprint</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span>
+                                                           <span class="n">fields</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">(</span><span class="o">**</span><span class="n">blueprint</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+</div></div>
+<div class="viewcode-block" id="BlueprintsId"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsId">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsId</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getById&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a blueprint by its id.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsId.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsId.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get blueprint by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;plan&#39;</span><span class="p">,</span> <span class="s">&#39;created_at&#39;</span><span class="p">,</span> <span class="s">&#39;updated_at&#39;</span><span class="p">}</span>
+        <span class="n">blueprint</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span>
+                                                           <span class="n">fields</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">(</span><span class="o">**</span><span class="n">blueprint</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;upload&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Submitted blueprint should be a tar &quot;</span>
+              <span class="s">&quot;gzipped directory containing the blueprint.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;application_file_name&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;File name of yaml &#39;</span>
+                                    <span class="s">&#39;containing the &quot;main&quot; blueprint.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;defaultValue&#39;</span><span class="p">:</span> <span class="s">&#39;blueprint.yaml&#39;</span><span class="p">},</span>
+                    <span class="p">{</span>
+                        <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Binary form of the tar &#39;</span>
+                                       <span class="s">&#39;gzipped blueprint directory&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                        <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                        <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;binary&#39;</span><span class="p">,</span>
+                        <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                        <span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/octet-stream&quot;</span>
+        <span class="p">]</span>
+
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsId.put"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsId.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload a blueprint (id specified)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">BlueprintsUpload</span><span class="p">()</span><span class="o">.</span><span class="n">do_request</span><span class="p">(</span><span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">)</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;deleteById&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;deletes a blueprint by its id.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsId.delete"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsId.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete blueprint by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Note: The current delete semantics are such that if a deployment</span>
+        <span class="c"># for the blueprint exists, the deletion operation will fail.</span>
+        <span class="c"># However, there is no handling of possible concurrency issue with</span>
+        <span class="c"># regard to that matter at the moment.</span>
+        <span class="n">blueprint</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">delete_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+
+        <span class="c"># Delete blueprint resources from file server</span>
+        <span class="n">blueprint_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_root</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_blueprints_folder</span><span class="p">,</span>
+            <span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">blueprint_folder</span><span class="p">)</span>
+        <span class="n">uploaded_blueprint_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_root</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">file_server_uploaded_blueprints_folder</span><span class="p">,</span>
+            <span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">uploaded_blueprint_folder</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">BlueprintState</span><span class="p">(</span><span class="o">**</span><span class="n">blueprint</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span> <span class="mi">200</span>
+
+</div></div>
+<div class="viewcode-block" id="BlueprintsIdValidate"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdValidate">[docs]</a><span class="k">class</span> <span class="nc">BlueprintsIdValidate</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintValidationStatus</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;validate&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Validates a given blueprint.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">BlueprintValidationStatus</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="BlueprintsIdValidate.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.BlueprintsIdValidate.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate blueprint by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">validate_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ExecutionsId"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ExecutionsId">[docs]</a><span class="k">class</span> <span class="nc">ExecutionsId</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getById&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns the execution state by its id.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="ExecutionsId.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ExecutionsId.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get execution by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">execution</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_execution</span><span class="p">(</span><span class="n">execution_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">(</span><span class="o">**</span><span class="n">execution</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;modify_state&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Modifies a running execution state (currently, only cancel&quot;</span>
+              <span class="s">&quot; is supported)&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;json with an action key. &#39;</span>
+                                    <span class="s">&#39;Legal values for action are: [cancel]&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="n">requests_schema</span><span class="o">.</span><span class="n">ModifyExecutionRequest</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>  <span class="c"># NOQA</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/json&quot;</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="ExecutionsId.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ExecutionsId.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply execution action (cancel) by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;action&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;action&#39;</span><span class="p">]</span>
+
+        <span class="n">valid_actions</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;cancel&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">action</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_actions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span>
+                <span class="s">&#39;Invalid action: {0}, Valid action values are: {1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">action</span><span class="p">,</span> <span class="n">valid_actions</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s">&#39;cancel&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">cancel_workflow</span><span class="p">(</span><span class="n">execution_id</span><span class="p">),</span> <span class="mi">201</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;updateExecutionStatus&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Updates the execution&#39;s status&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;status&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&quot;The execution&#39;s new status&quot;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;error&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&quot;An error message. If omitted, &quot;</span>
+                                    <span class="s">&quot;error will be updated to an empty &quot;</span>
+                                    <span class="s">&quot;string&quot;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/json&quot;</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="ExecutionsId.patch"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ExecutionsId.patch">[docs]</a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update execution status by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;status&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">update_execution_status</span><span class="p">(</span>
+            <span class="n">execution_id</span><span class="p">,</span>
+            <span class="n">request_json</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">],</span>
+            <span class="n">request_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;error&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">(</span><span class="o">**</span><span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_execution</span><span class="p">(</span>
+            <span class="n">execution_id</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+</div></div>
+<div class="viewcode-block" id="Deployments"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Deployments">[docs]</a><span class="k">class</span> <span class="nc">Deployments</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;List[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="o">.</span><span class="n">__name__</span><span class="p">),</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;list&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a list existing deployments.&quot;</span>
+    <span class="p">)</span>
+<div class="viewcode-block" id="Deployments.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Deployments.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List deployments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">marshal</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">(</span><span class="o">**</span><span class="n">deployment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
+                        <span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span> <span class="k">for</span>
+                <span class="n">deployment</span> <span class="ow">in</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">deployments_list</span><span class="p">()]</span>
+
+</div></div>
+<div class="viewcode-block" id="DeploymentsId"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsId">[docs]</a><span class="k">class</span> <span class="nc">DeploymentsId</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span> <span class="o">=</span> <span class="n">reqparse</span><span class="o">.</span><span class="n">RequestParser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;ignore_live_nodes&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                                       <span class="n">default</span><span class="o">=</span><span class="s">&#39;false&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s">&#39;args&#39;</span><span class="p">)</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getById&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a deployment by its id.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsId.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsId.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get deployment by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">deployment</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">(</span><span class="o">**</span><span class="n">deployment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;createDeployment&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Created a new deployment of the given blueprint.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Deployment blue print&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="n">requests_schema</span><span class="o">.</span><span class="n">DeploymentRequest</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/json&quot;</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsId.put"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsId.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a deployment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;blueprint_id&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;blueprint_id&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">create_deployment</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span>
+                                                          <span class="n">deployment_id</span><span class="p">),</span> <span class="mi">201</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;deleteById&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;deletes a deployment by its id.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;ignore_live_nodes&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Specifies whether to ignore live nodes,&#39;</span>
+                                    <span class="s">&#39;or raise an error upon such nodes &#39;</span>
+                                    <span class="s">&#39;instead.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;boolean&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;defaultValue&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsId.delete"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsId.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete deployment by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+        <span class="n">ignore_live_nodes</span> <span class="o">=</span> <span class="n">verify_and_convert_bool</span><span class="p">(</span>
+            <span class="s">&#39;ignore_live_nodes&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="s">&#39;ignore_live_nodes&#39;</span><span class="p">])</span>
+
+        <span class="n">deployment</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">delete_deployment</span><span class="p">(</span>
+            <span class="n">deployment_id</span><span class="p">,</span> <span class="n">ignore_live_nodes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Deployment</span><span class="p">(</span><span class="o">**</span><span class="n">deployment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span> <span class="mi">200</span>
+
+</div></div>
+<div class="viewcode-block" id="Nodes"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Nodes">[docs]</a><span class="k">class</span> <span class="nc">Nodes</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span> <span class="o">=</span> <span class="n">reqparse</span><span class="o">.</span><span class="n">RequestParser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;deployment_id&#39;</span><span class="p">,</span>
+                                       <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                                       <span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                                       <span class="n">location</span><span class="o">=</span><span class="s">&#39;args&#39;</span><span class="p">)</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;List[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Node</span><span class="o">.</span><span class="n">__name__</span><span class="p">),</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;listNodes&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns nodes list according to the provided query parameters.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;deployment_id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Deployment id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="Nodes.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Nodes.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+        <span class="n">deployment_id</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deployment_id&#39;</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">marshal</span><span class="p">(</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="o">**</span><span class="n">node</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">Node</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="NodeInstances"><a class="viewcode-back" href="../../index.html#manager_rest.resources.NodeInstances">[docs]</a><span class="k">class</span> <span class="nc">NodeInstances</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span> <span class="o">=</span> <span class="n">reqparse</span><span class="o">.</span><span class="n">RequestParser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;deployment_id&#39;</span><span class="p">,</span>
+                                       <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                                       <span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                                       <span class="n">location</span><span class="o">=</span><span class="s">&#39;args&#39;</span><span class="p">)</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;List[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="o">.</span><span class="n">__name__</span><span class="p">),</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;listNodeInstances&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns node instances list according to the provided query&quot;</span>
+              <span class="s">&quot; parameters.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;deployment_id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Deployment id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="NodeInstances.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.NodeInstances.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List node instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+        <span class="n">deployment_id</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deployment_id&#39;</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_node_instances</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">marshal</span><span class="p">(</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="p">(</span><span class="o">**</span><span class="n">node</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="NodeInstancesId"><a class="viewcode-back" href="../../index.html#manager_rest.resources.NodeInstancesId">[docs]</a><span class="k">class</span> <span class="nc">NodeInstancesId</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Node</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getNodeInstance&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns node state/runtime properties &quot;</span>
+              <span class="s">&quot;according to the provided query parameters.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;node_id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Node Id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;path&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;state_and_runtime_properties&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Specifies whether to return state and &#39;</span>
+                                    <span class="s">&#39;runtime properties&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;boolean&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;defaultValue&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="NodeInstancesId.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.NodeInstancesId.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get node instance by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_node_instance</span><span class="p">(</span><span class="n">node_instance_id</span><span class="p">)</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_node_instance</span><span class="p">(</span><span class="n">node_instance_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">node_instance_id</span><span class="p">,</span>
+            <span class="n">node_id</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span>
+            <span class="n">host_id</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">host_id</span><span class="p">,</span>
+            <span class="n">relationships</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">relationships</span><span class="p">,</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">deployment_id</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">runtime_properties</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">runtime_properties</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;patchNodeState&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Update node instance. Expecting the request body to &quot;</span>
+              <span class="s">&quot;be a dictionary containing &#39;version&#39; which is used for &quot;</span>
+              <span class="s">&quot;optimistic locking during the update, and optionally &quot;</span>
+              <span class="s">&quot;&#39;runtime_properties&#39; (dictionary) and/or &#39;state&#39; (string) &quot;</span>
+              <span class="s">&quot;properties&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;node_instance_id&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Node instance identifier&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;path&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;version&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;used for optimistic locking during &#39;</span>
+                                    <span class="s">&#39;update&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;int&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;runtime_properties&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;a dictionary of runtime properties. If &#39;</span>
+                                    <span class="s">&#39;omitted, the runtime properties wont be &#39;</span>
+                                    <span class="s">&#39;updated&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;dict&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;state&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&quot;the new node&#39;s state. If omitted, &quot;</span>
+                                    <span class="s">&quot;the state wont be updated&quot;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;application/json&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="NodeInstancesId.patch"><a class="viewcode-back" href="../../index.html#manager_rest.resources.NodeInstancesId.patch">[docs]</a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update node instance by id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">dict</span> <span class="ow">or</span> \
+                <span class="s">&#39;version&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span> <span class="ow">or</span> \
+                <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">__class__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">dict</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;Request body is expected to be a map containing &#39;</span> \
+                          <span class="s">&#39;a &quot;version&quot; field and optionally &#39;</span> \
+                          <span class="s">&#39;&quot;runtimeProperties&quot; and/or &quot;state&quot; fields&#39;</span>
+            <span class="k">elif</span> <span class="s">&#39;version&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;Request body must be a map containing a &#39;</span> \
+                          <span class="s">&#39;&quot;version&quot; field&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> \
+                    <span class="s">&quot;request body&#39;s &#39;version&#39; field must be an int but&quot;</span> \
+                    <span class="s">&quot; is of type {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">]</span>
+                                             <span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">BadParametersError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">node</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DeploymentNodeInstance</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">node_instance_id</span><span class="p">,</span>
+            <span class="n">node_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">relationships</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">host_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">deployment_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">runtime_properties</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;runtime_properties&#39;</span><span class="p">),</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;state&#39;</span><span class="p">),</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">])</span>
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">update_node_instance</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">NodeInstance</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_node_instance</span><span class="p">(</span>
+                <span class="n">node_instance_id</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+</div></div>
+<div class="viewcode-block" id="DeploymentsIdExecutions"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsIdExecutions">[docs]</a><span class="k">class</span> <span class="nc">DeploymentsIdExecutions</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_args_parser</span> <span class="o">=</span> <span class="n">reqparse</span><span class="o">.</span><span class="n">RequestParser</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post_args_parser</span> <span class="o">=</span> <span class="n">reqparse</span><span class="o">.</span><span class="n">RequestParser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post_args_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;force&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                                            <span class="n">default</span><span class="o">=</span><span class="s">&#39;false&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s">&#39;args&#39;</span><span class="p">)</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;List[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">__name__</span><span class="p">),</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;list&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a list of executions for the provided deployment.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsIdExecutions.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsIdExecutions.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List deployment executions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
+
+        <span class="n">executions</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_deployment_executions</span><span class="p">(</span>
+            <span class="n">deployment_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">marshal</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">(</span><span class="o">**</span><span class="n">execution</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span>
+                        <span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span> <span class="k">for</span> <span class="n">execution</span>
+                <span class="ow">in</span> <span class="n">executions</span><span class="p">]</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;execute&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Executes the provided workflow under the given deployment &quot;</span>
+              <span class="s">&quot;context.&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Workflow execution request&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="n">requests_schema</span><span class="o">.</span><span class="n">ExecutionRequest</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;force&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Specifies whether to force workflow &#39;</span>
+                                    <span class="s">&#39;execution even if there is an ongoing &#39;</span>
+                                    <span class="s">&#39;workflow executing for the same &#39;</span>
+                                    <span class="s">&#39;deployment&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;boolean&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;defaultValue&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;query&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/json&quot;</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsIdExecutions.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsIdExecutions.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Execute a workflow</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;workflow_id&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_args_parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+        <span class="n">force</span> <span class="o">=</span> <span class="n">verify_and_convert_bool</span><span class="p">(</span><span class="s">&#39;force&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="s">&#39;force&#39;</span><span class="p">])</span>
+
+        <span class="c"># validate no execution is currently in progress</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
+            <span class="n">executions</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_deployment_executions</span><span class="p">(</span>
+                <span class="n">deployment_id</span><span class="p">)</span>
+            <span class="n">running</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">executions</span> <span class="k">if</span>
+                <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_execution</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">status</span>
+                <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;failed&#39;</span><span class="p">,</span> <span class="s">&#39;terminated&#39;</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">running</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ExistingRunningExecutionError</span><span class="p">(</span>
+                    <span class="s">&#39;The following executions are currently running for this &#39;</span>
+                    <span class="s">&#39;deployment: {0}. To execute this workflow anyway, pass &#39;</span>
+                    <span class="s">&#39;&quot;force=true&quot; as a query parameter to this request&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">running</span><span class="p">))</span>
+
+        <span class="n">workflow_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;workflow_id&#39;</span><span class="p">]</span>
+        <span class="n">execution</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">execute_workflow</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">,</span>
+                                                              <span class="n">workflow_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Execution</span><span class="p">(</span><span class="o">**</span><span class="n">execution</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()),</span> <span class="mi">201</span>
+
+</div></div>
+<div class="viewcode-block" id="DeploymentsIdWorkflows"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsIdWorkflows">[docs]</a><span class="k">class</span> <span class="nc">DeploymentsIdWorkflows</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="s">&#39;Workflows&#39;</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;workflows&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns a list of workflows related to the provided deployment.&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Workflows</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="DeploymentsIdWorkflows.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.DeploymentsIdWorkflows.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List deployment workflows</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">deployment</span> <span class="o">=</span> <span class="n">get_blueprints_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_deployment</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">)</span>
+        <span class="n">deployment_workflows</span> <span class="o">=</span> <span class="n">deployment</span><span class="o">.</span><span class="n">plan</span><span class="p">[</span><span class="s">&#39;workflows&#39;</span><span class="p">]</span>
+        <span class="n">workflows</span> <span class="o">=</span> <span class="p">[</span><span class="n">responses</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">wf_name</span><span class="p">,</span> <span class="n">created_at</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="k">for</span>
+                     <span class="n">wf_name</span> <span class="ow">in</span>
+                     <span class="n">deployment_workflows</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s">&#39;workflows&#39;</span><span class="p">:</span> <span class="n">workflows</span><span class="p">,</span>
+            <span class="s">&#39;blueprint_id&#39;</span><span class="p">:</span> <span class="n">deployment</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+            <span class="s">&#39;deployment_id&#39;</span><span class="p">:</span> <span class="n">deployment</span><span class="o">.</span><span class="n">id</span>
+        <span class="p">}</span>
+
+</div></div>
+<span class="k">def</span> <span class="nf">_query_elastic_search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">doc_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Query ElasticSearch with the provided index and query body.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    Elasticsearch result as is (Python dict).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">es</span> <span class="o">=</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">Elasticsearch</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">es</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Events"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Events">[docs]</a><span class="k">class</span> <span class="nc">Events</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@exceptions_handled</span>
+    <span class="k">def</span> <span class="nf">_query_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List events for the provided Elasticsearch query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">_query_elastic_search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s">&#39;cloudify_events&#39;</span><span class="p">,</span>
+                                     <span class="n">body</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">)</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&#39;events&#39;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&#39;Returns a list of events for the provided ElasticSearch query. &#39;</span>
+              <span class="s">&#39;The response format is as ElasticSearch response format.&#39;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;ElasticSearch query.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;application/json&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+<div class="viewcode-block" id="Events.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Events.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List events for the provided Elasticsearch query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_events</span><span class="p">()</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&#39;events&#39;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&#39;Returns a list of events for the provided ElasticSearch query. &#39;</span>
+              <span class="s">&#39;The response format is as ElasticSearch response format.&#39;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;ElasticSearch query.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;application/json&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+<div class="viewcode-block" id="Events.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Events.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List events for the provided Elasticsearch query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_events</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Search"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Search">[docs]</a><span class="k">class</span> <span class="nc">Search</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&#39;search&#39;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&#39;Returns results from the storage for the provided &#39;</span>
+              <span class="s">&#39;ElasticSearch query. The response format is as ElasticSearch &#39;</span>
+              <span class="s">&#39;response format.&#39;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;ElasticSearch query.&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="s">&#39;string&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;application/json&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="Search.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Search.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search using an Elasticsearch query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">_query_elastic_search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s">&#39;cloudify_storage&#39;</span><span class="p">,</span>
+                                     <span class="n">body</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="Status"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Status">[docs]</a><span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">Status</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;status&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Returns state of running system services&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="Status.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.Status.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the status of running system services</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">job_list</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;rsyslog&#39;</span><span class="p">:</span> <span class="s">&#39;Syslog&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;manager&#39;</span><span class="p">:</span> <span class="s">&#39;Cloudify Manager&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;workflow&#39;</span><span class="p">:</span> <span class="s">&#39;Workflow Service&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;riemann&#39;</span><span class="p">:</span> <span class="s">&#39;Riemann&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;rabbitmq-server&#39;</span><span class="p">:</span> <span class="s">&#39;RabbitMQ&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;celeryd-cloudify-management&#39;</span><span class="p">:</span> <span class="s">&#39;Celery Managment&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;ssh&#39;</span><span class="p">:</span> <span class="s">&#39;SSH&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;elasticsearch&#39;</span><span class="p">:</span> <span class="s">&#39;Elasticsearch&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;cloudify-ui&#39;</span><span class="p">:</span> <span class="s">&#39;Cloudify UI&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;logstash&#39;</span><span class="p">:</span> <span class="s">&#39;Logstash&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;nginx&#39;</span><span class="p">:</span> <span class="s">&#39;Webserver&#39;</span>
+                    <span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">manager_rest.upstartdbus</span> <span class="kn">import</span> <span class="n">get_jobs</span>
+            <span class="n">jobs</span> <span class="o">=</span> <span class="n">get_jobs</span><span class="p">(</span><span class="n">job_list</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">job_list</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">jobs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;undefined&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">Status</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">&#39;running&#39;</span><span class="p">,</span> <span class="n">services</span><span class="o">=</span><span class="n">jobs</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ProviderContext"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ProviderContext">[docs]</a><span class="k">class</span> <span class="nc">ProviderContext</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">ProviderContext</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&quot;getContext&quot;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Get the provider context&quot;</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">ProviderContext</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="ProviderContext.get"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ProviderContext.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get provider context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">get_provider_context</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">ProviderContext</span><span class="p">(</span><span class="o">**</span><span class="n">context</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+    <span class="nd">@swagger.operation</span><span class="p">(</span>
+        <span class="n">responseClass</span><span class="o">=</span><span class="n">responses</span><span class="o">.</span><span class="n">ProviderContextPostStatus</span><span class="p">,</span>
+        <span class="n">nickname</span><span class="o">=</span><span class="s">&#39;postContext&#39;</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="s">&quot;Post the provider context&quot;</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[{</span><span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;description&#39;</span><span class="p">:</span> <span class="s">&#39;Provider context&#39;</span><span class="p">,</span>
+                     <span class="s">&#39;required&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+                     <span class="s">&#39;allowMultiple&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+                     <span class="s">&#39;dataType&#39;</span><span class="p">:</span> <span class="n">requests_schema</span><span class="o">.</span><span class="n">PostProviderContextRequest</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>  <span class="c"># NOQA</span>
+                     <span class="s">&#39;paramType&#39;</span><span class="p">:</span> <span class="s">&#39;body&#39;</span><span class="p">}],</span>
+        <span class="n">consumes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s">&quot;application/json&quot;</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="nd">@marshal_with</span><span class="p">(</span><span class="n">responses</span><span class="o">.</span><span class="n">ProviderContextPostStatus</span><span class="o">.</span><span class="n">resource_fields</span><span class="p">)</span>
+    <span class="nd">@exceptions_handled</span>
+<div class="viewcode-block" id="ProviderContext.post"><a class="viewcode-back" href="../../index.html#manager_rest.resources.ProviderContext.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create provider context</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">verify_json_content_type</span><span class="p">()</span>
+        <span class="n">request_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;context&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="n">verify_parameter_in_request_body</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="n">request_json</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ProviderContext</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+                                         <span class="n">context</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s">&#39;context&#39;</span><span class="p">])</span>
+        <span class="n">get_storage_manager</span><span class="p">()</span><span class="o">.</span><span class="n">put_provider_context</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span><span class="o">.</span><span class="n">ProviderContextPostStatus</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s">&#39;ok&#39;</span><span class="p">),</span> <span class="mi">201</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

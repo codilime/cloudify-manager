@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>manager_rest.es_storage_manager &mdash; cloudify-rest-service 3.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="cloudify-rest-service 3.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> cloudify-rest-service</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">cloudify-rest-service</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>manager_rest.es_storage_manager</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for manager_rest.es_storage_manager</h1><div class="highlight"><pre>
+<span class="c">#########</span>
+<span class="c"># Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c"># you may not use this file except in compliance with the License.</span>
+<span class="c"># You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#  * See the License for the specific language governing permissions and</span>
+<span class="c">#  * limitations under the License.</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ran&#39;</span>
+
+<span class="kn">from</span> <span class="nn">elasticsearch</span> <span class="kn">import</span> <span class="n">Elasticsearch</span>
+<span class="kn">import</span> <span class="nn">elasticsearch.exceptions</span>
+<span class="kn">from</span> <span class="nn">manager_rest</span> <span class="kn">import</span> <span class="n">manager_exceptions</span>
+<span class="kn">from</span> <span class="nn">manager_rest.models</span> <span class="kn">import</span> <span class="p">(</span><span class="n">BlueprintState</span><span class="p">,</span>
+                                 <span class="n">Deployment</span><span class="p">,</span>
+                                 <span class="n">Execution</span><span class="p">,</span>
+                                 <span class="n">DeploymentNode</span><span class="p">,</span>
+                                 <span class="n">DeploymentNodeInstance</span><span class="p">,</span>
+                                 <span class="n">ProviderContext</span><span class="p">)</span>
+
+<span class="n">STORAGE_INDEX_NAME</span> <span class="o">=</span> <span class="s">&#39;cloudify_storage&#39;</span>
+<span class="n">NODE_TYPE</span> <span class="o">=</span> <span class="s">&#39;node&#39;</span>
+<span class="n">NODE_INSTANCE_TYPE</span> <span class="o">=</span> <span class="s">&#39;node_instance&#39;</span>
+<span class="n">BLUEPRINT_TYPE</span> <span class="o">=</span> <span class="s">&#39;blueprint&#39;</span>
+<span class="n">DEPLOYMENT_TYPE</span> <span class="o">=</span> <span class="s">&#39;deployment&#39;</span>
+<span class="n">EXECUTION_TYPE</span> <span class="o">=</span> <span class="s">&#39;execution&#39;</span>
+<span class="n">PROVIDER_CONTEXT_TYPE</span> <span class="o">=</span> <span class="s">&#39;provider_context&#39;</span>
+<span class="n">PROVIDER_CONTEXT_ID</span> <span class="o">=</span> <span class="s">&#39;CONTEXT&#39;</span>
+
+<span class="n">DEFAULT_SEARCH_SIZE</span> <span class="o">=</span> <span class="mi">10000</span>
+
+
+<div class="viewcode-block" id="ESStorageManager"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager">[docs]</a><span class="k">class</span> <span class="nc">ESStorageManager</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_get_es_conn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Elasticsearch</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_list_docs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">model_class</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">search_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                                   <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span>
+                                                   <span class="n">size</span><span class="o">=</span><span class="n">DEFAULT_SEARCH_SIZE</span><span class="p">,</span>
+                                                   <span class="n">body</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">docs</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="n">hit</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">],</span> <span class="n">search_result</span><span class="p">[</span><span class="s">&#39;hits&#39;</span><span class="p">][</span><span class="s">&#39;hits&#39;</span><span class="p">])</span>
+        <span class="c"># ES doesn&#39;t return _version if using its search API.</span>
+        <span class="k">if</span> <span class="n">doc_type</span> <span class="o">==</span> <span class="n">NODE_INSTANCE_TYPE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">doc</span><span class="p">:</span> <span class="n">model_class</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">doc</span><span class="p">),</span> <span class="n">docs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">doc</span><span class="p">:</span> <span class="n">model_class</span><span class="p">(</span><span class="o">**</span><span class="n">doc</span><span class="p">),</span> <span class="n">docs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                               <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span>
+                                               <span class="nb">id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span>
+                                               <span class="n">_source</span><span class="o">=</span><span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                               <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span>
+                                               <span class="nb">id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&#39;{0} {1} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_doc_and_deserialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">model_class</span><span class="p">,</span>
+                                 <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc</span><span class="p">(</span><span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">model_class</span><span class="p">(</span><span class="o">**</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">]):</span>
+                <span class="n">missing_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span>
+                                  <span class="ow">in</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">]]</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Some or all fields specified for query &#39;</span>
+                                   <span class="s">&#39;were missing: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">missing_fields</span><span class="p">))</span>
+            <span class="n">fields_data</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fill_missing_fields_and_deserialize</span><span class="p">(</span><span class="n">fields_data</span><span class="p">,</span>
+                                                             <span class="n">model_class</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_put_doc_if_not_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                       <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span>
+                                       <span class="n">body</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;{0} {1} already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_delete_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">model_class</span><span class="p">,</span> <span class="n">id_field</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span>
+                                             <span class="n">doc_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&quot;{0} {1} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc_type</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">))</span>
+
+        <span class="n">fields_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">id_field</span><span class="p">:</span> <span class="n">res</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fill_missing_fields_and_deserialize</span><span class="p">(</span><span class="n">fields_data</span><span class="p">,</span>
+                                                         <span class="n">model_class</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_delete_doc_by_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_type</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">delete_by_query</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                            <span class="n">doc_type</span><span class="o">=</span><span class="n">doc_type</span><span class="p">,</span>
+                                            <span class="n">body</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_fill_missing_fields_and_deserialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_data</span><span class="p">,</span> <span class="n">model_class</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">model_class</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields_data</span><span class="p">:</span>
+                <span class="n">fields_data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">model_class</span><span class="p">(</span><span class="o">**</span><span class="n">fields_data</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_build_field_value_filter</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="c"># This method is used to create a search filter to receive only</span>
+        <span class="c"># results where a specific key holds a specific value.</span>
+        <span class="c"># Filters are faster than queries as they are cached and don&#39;t</span>
+        <span class="c"># influence the score.</span>
+        <span class="c"># Since a filter must go along with a query, it&#39;s wrapped in a</span>
+        <span class="c"># simple &#39;constant_score&#39; query in this case (similar to match_all</span>
+        <span class="c"># query in some ways)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">&#39;constant_score&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s">&#39;filter&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s">&#39;term&#39;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="n">key</span><span class="p">:</span> <span class="n">val</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="ESStorageManager.node_instances_list"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.node_instances_list">[docs]</a>    <span class="k">def</span> <span class="nf">node_instances_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">search_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                                   <span class="n">doc_type</span><span class="o">=</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span>
+                                                   <span class="n">size</span><span class="o">=</span><span class="n">DEFAULT_SEARCH_SIZE</span><span class="p">)</span>
+        <span class="n">docs_with_versions</span> <span class="o">=</span> \
+            <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">],</span> <span class="n">hit</span><span class="p">[</span><span class="s">&#39;_version&#39;</span><span class="p">]),</span>
+                <span class="n">search_result</span><span class="p">[</span><span class="s">&#39;hits&#39;</span><span class="p">][</span><span class="s">&#39;hits&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">doc_with_version</span><span class="p">:</span> <span class="n">DeploymentNodeInstance</span><span class="p">(</span>
+                <span class="n">version</span><span class="o">=</span><span class="n">doc_with_version</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">**</span><span class="n">doc_with_version</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">docs_with_versions</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.blueprints_list"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.blueprints_list">[docs]</a>    <span class="k">def</span> <span class="nf">blueprints_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">BLUEPRINT_TYPE</span><span class="p">,</span> <span class="n">BlueprintState</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.deployments_list"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.deployments_list">[docs]</a>    <span class="k">def</span> <span class="nf">deployments_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">DEPLOYMENT_TYPE</span><span class="p">,</span> <span class="n">Deployment</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.executions_list"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.executions_list">[docs]</a>    <span class="k">def</span> <span class="nf">executions_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="n">Execution</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_blueprint_deployments"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_blueprint_deployments">[docs]</a>    <span class="k">def</span> <span class="nf">get_blueprint_deployments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">DEPLOYMENT_TYPE</span><span class="p">,</span> <span class="n">Deployment</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">_build_field_value_filter</span><span class="p">(</span>
+                                   <span class="s">&#39;blueprint_id&#39;</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_deployment_executions"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_deployment_executions">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment_executions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="n">Execution</span><span class="p">,</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">_build_field_value_filter</span><span class="p">(</span>
+                                   <span class="s">&#39;deployment_id&#39;</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">):</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc</span><span class="p">(</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">)</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">DeploymentNodeInstance</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;_version&#39;</span><span class="p">],</span>
+                                      <span class="o">**</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;_source&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">node</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_node_instances"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_node_instances">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_instances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">deployment_id</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;term&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;deployment_id&#39;</span><span class="p">:</span> <span class="n">deployment_id</span><span class="p">}}}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span>
+                               <span class="n">DeploymentNodeInstance</span><span class="p">,</span>
+                               <span class="n">query</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_nodes"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">get_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">deployment_id</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;term&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;deployment_id&#39;</span><span class="p">:</span> <span class="n">deployment_id</span><span class="p">}}}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_docs</span><span class="p">(</span><span class="n">NODE_TYPE</span><span class="p">,</span> <span class="n">DeploymentNode</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc_and_deserialize</span><span class="p">(</span><span class="n">BLUEPRINT_TYPE</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span>
+                                             <span class="n">BlueprintState</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">get_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc_and_deserialize</span><span class="p">(</span><span class="n">DEPLOYMENT_TYPE</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span>
+                                             <span class="n">Deployment</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_execution"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_execution">[docs]</a>    <span class="k">def</span> <span class="nf">get_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc_and_deserialize</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span>
+                                             <span class="n">Execution</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">put_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span> <span class="n">blueprint</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">BLUEPRINT_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">),</span>
+                                    <span class="n">blueprint</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">put_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">deployment</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">DEPLOYMENT_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">deployment_id</span><span class="p">),</span>
+                                    <span class="n">deployment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_execution"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_execution">[docs]</a>    <span class="k">def</span> <span class="nf">put_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span> <span class="n">execution</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">execution_id</span><span class="p">),</span>
+                                    <span class="n">execution</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_node"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_node">[docs]</a>    <span class="k">def</span> <span class="nf">put_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="s">&#39;{0}_{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">deployment_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">doc_data</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">NODE_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">),</span> <span class="n">doc_data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">put_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance</span><span class="p">):</span>
+        <span class="n">node_instance_id</span> <span class="o">=</span> <span class="n">node_instance</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">doc_data</span> <span class="o">=</span> <span class="n">node_instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">doc_data</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span>
+                                    <span class="nb">str</span><span class="p">(</span><span class="n">node_instance_id</span><span class="p">),</span>
+                                    <span class="n">doc_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.delete_blueprint"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.delete_blueprint">[docs]</a>    <span class="k">def</span> <span class="nf">delete_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc</span><span class="p">(</span><span class="n">BLUEPRINT_TYPE</span><span class="p">,</span> <span class="n">blueprint_id</span><span class="p">,</span>
+                                <span class="n">BlueprintState</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.update_execution_status"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.update_execution_status">[docs]</a>    <span class="k">def</span> <span class="nf">update_execution_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">update_doc_data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;status&#39;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+                           <span class="s">&#39;error&#39;</span><span class="p">:</span> <span class="n">error</span><span class="p">}</span>
+        <span class="n">update_doc</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;doc&#39;</span><span class="p">:</span> <span class="n">update_doc_data</span><span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                       <span class="n">doc_type</span><span class="o">=</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span>
+                                       <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">execution_id</span><span class="p">),</span>
+                                       <span class="n">body</span><span class="o">=</span><span class="n">update_doc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&quot;Execution {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">execution_id</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.delete_deployment"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.delete_deployment">[docs]</a>    <span class="k">def</span> <span class="nf">delete_deployment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">):</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;query&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;term&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;deployment_id&#39;</span><span class="p">:</span> <span class="n">deployment_id</span><span class="p">}}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc_by_query</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc_by_query</span><span class="p">(</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc_by_query</span><span class="p">(</span><span class="n">NODE_TYPE</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc</span><span class="p">(</span><span class="n">DEPLOYMENT_TYPE</span><span class="p">,</span> <span class="n">deployment_id</span><span class="p">,</span> <span class="n">Deployment</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.delete_execution"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.delete_execution">[docs]</a>    <span class="k">def</span> <span class="nf">delete_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc</span><span class="p">(</span><span class="n">EXECUTION_TYPE</span><span class="p">,</span> <span class="n">execution_id</span><span class="p">,</span> <span class="n">Execution</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.delete_node"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.delete_node">[docs]</a>    <span class="k">def</span> <span class="nf">delete_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc</span><span class="p">(</span><span class="n">NODE_TYPE</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">DeploymentNode</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.delete_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.delete_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">delete_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_instance_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete_doc</span><span class="p">(</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span>
+                                <span class="n">node_instance_id</span><span class="p">,</span>
+                                <span class="n">DeploymentNodeInstance</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.update_node_instance"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.update_node_instance">[docs]</a>    <span class="k">def</span> <span class="nf">update_node_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">update_doc_data</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="c"># deleting version field as it&#39;s maintained by ES internally</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">update_doc_data</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">])</span>
+        <span class="c"># removing fields with value None as they&#39;re not to be updated</span>
+        <span class="n">update_doc_data</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">update_doc_data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">}</span>
+        <span class="n">update_doc</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;doc&#39;</span><span class="p">:</span> <span class="n">update_doc_data</span><span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_es_conn</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">STORAGE_INDEX_NAME</span><span class="p">,</span>
+                                       <span class="n">doc_type</span><span class="o">=</span><span class="n">NODE_INSTANCE_TYPE</span><span class="p">,</span>
+                                       <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                                       <span class="n">body</span><span class="o">=</span><span class="n">update_doc</span><span class="p">,</span>
+                                       <span class="n">version</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s">&quot;Node {0} not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">elasticsearch</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">manager_exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span>
+                <span class="s">&#39;Node update conflict: mismatching versions&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.put_provider_context"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.put_provider_context">[docs]</a>    <span class="k">def</span> <span class="nf">put_provider_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">provider_context</span><span class="p">):</span>
+        <span class="n">doc_data</span> <span class="o">=</span> <span class="n">provider_context</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_doc_if_not_exists</span><span class="p">(</span><span class="n">PROVIDER_CONTEXT_TYPE</span><span class="p">,</span>
+                                    <span class="n">PROVIDER_CONTEXT_ID</span><span class="p">,</span>
+                                    <span class="n">doc_data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ESStorageManager.get_provider_context"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.ESStorageManager.get_provider_context">[docs]</a>    <span class="k">def</span> <span class="nf">get_provider_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_doc_and_deserialize</span><span class="p">(</span><span class="n">PROVIDER_CONTEXT_TYPE</span><span class="p">,</span>
+                                             <span class="n">PROVIDER_CONTEXT_ID</span><span class="p">,</span>
+                                             <span class="n">ProviderContext</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="create"><a class="viewcode-back" href="../../index.html#manager_rest.es_storage_manager.create">[docs]</a><span class="k">def</span> <span class="nf">create</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">ESStorageManager</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Gigaspaces.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
