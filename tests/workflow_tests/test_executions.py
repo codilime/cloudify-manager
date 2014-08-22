@@ -106,7 +106,7 @@ class ExecutionsTest(TestCase):
             'custom-parameter': "doesn't matter"
         }
         execution = self.client.deployments.execute(
-            deployment_id, 'another_execute_operation',
+            deployment_id, 'script_execute_operation',
             parameters=execution_parameters,
             allow_custom_parameters=True)
         wait_for_execution_to_end(execution)
@@ -128,7 +128,8 @@ class ExecutionsTest(TestCase):
                 'key': 'different-key',
                 'value': 'different-value'
             },
-            'custom-parameter': "doesn't matter"
+            'custom-parameter': "doesn't matter",
+            'script_path': 'scripts/execute_operation.py'
         }
         self.assertEqual(expected_params, execution.parameters)
 

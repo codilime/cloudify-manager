@@ -3,6 +3,10 @@ imports:
     - testmockoperations.yaml
     - mock_workflows_plugin.yaml
 
+plugins:
+    script_runner:
+        derived_from: cloudify.plugins.remote_plugin
+
 node_templates:
     test_node:
         type: cloudify.types.base
@@ -29,6 +33,19 @@ workflows:
             node_id:
                 default: test_node
             operation: {}
+            properties:
+                default:
+                    key: test_key
+                    value: test_value
+    script_execute_operation:
+        mapping: script_runner.tasks.execute_workflow
+        parameters:
+            script_path:
+                default: scripts/execute_operation.py
+            node_id:
+                default: test_node
+            operation:
+                default: test_interface.operation
             properties:
                 default:
                     key: test_key

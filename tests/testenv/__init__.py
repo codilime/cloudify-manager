@@ -359,6 +359,7 @@ class CeleryWorkflowsWorkerProcess(CeleryWorkerProcess):
         includes = ["workflows.default", "plugin_installer.tasks"]
         if use_mock_workers_installation:
             includes.append("mock_workflows.workflows")
+            includes.append('script_runner.tasks')
         super(CeleryWorkflowsWorkerProcess, self).__init__(
             tempdir, plugins_tempdir, manager_rest_port,
             name='workflows',
