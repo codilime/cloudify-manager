@@ -13,8 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-__author__ = 'idanmo'
-
 import uuid
 import time
 from testenv import TestCase
@@ -38,8 +36,11 @@ class BasicWorkflowsTest(TestCase):
         from plugins.cloudmock.tasks import get_machines
         result = send_task(get_machines)
         machines = result.get(timeout=10)
-
         self.assertEquals(1, len(machines))
+
+        outputs = self.client.deployments.outputs.get(deployment.id).outputs
+        # ip runtime property is not set in this case
+        self.assertEqual([None], outputs['ip_address']['value'])
 
     def test_dependencies_order_with_two_nodes(self):
         dsl_path = resource("dsl/dependencies_order_with_two_nodes.yaml")
