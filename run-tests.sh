@@ -83,8 +83,8 @@ run_intergration_tests()
     git clone https://github.com/cloudify-cosmo/cloudify-rest-client --depth=1
     cd cloudify-rest-client; pip install .; cd ..
     git clone https://github.com/cloudify-cosmo/cloudify-plugins-common
-    cd cloudify-plugins-common; pip install .; cd ..
-    # cd cloudify-plugins-common; git checkout CFY-1276-explicitly-install-imporblib-for-py26-compat; pip install .; cd ..
+    # cd cloudify-plugins-common; pip install .; cd ..
+    cd cloudify-plugins-common; git checkout CFY-1276-explicitly-install-imporblib-for-py26-compat; pip install .; cd ..
     git clone https://github.com/cloudify-cosmo/cloudify-diamond-plugin --depth=1
     cd cloudify-diamond-plugin; pip install .; cd ..
 
