@@ -1,3 +1,5 @@
+tosca_definitions_version: cloudify_dsl_1_0
+
 imports:
     - hello_world.yaml
 node_templates:
@@ -10,10 +12,6 @@ node_templates:
         relationships:
             -   type: cloudify.relationships.contained_in
                 target: vm
-    vm2:
-        type: cloudify.types.host
-        instances:
-            deploy: 5
 outputs:
     ip_address:
         description: Web site IP address.
@@ -26,5 +24,3 @@ outputs:
             type: http
             ip: { get_attribute: [ vm, ip ] }
             port: { get_attribute: [ http_web_server, port] }
-    partial:
-        value: { get_attribute: [ vm2, partial ] }
