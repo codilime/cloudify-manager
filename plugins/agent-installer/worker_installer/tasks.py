@@ -104,6 +104,13 @@ def get_celery_includes_list():
     return CELERY_INCLUDES_LIST
 
 
+def get_service_command(service, command):
+    # some linux distros don't have 'service' command (ex. openSUSE)
+    return '''if [[ -n $(which service 2>/dev/null) ]];
+              then sudo service {0} {1};
+              else sudo /etc/init.d/{0} {1}; fi'''.format(service, command)
+
+
 @operation
 @init_worker_installer
 def install(ctx, runner, agent_config, **kwargs):
@@ -240,7 +247,8 @@ def stop(ctx, runner, agent_config, **kwargs):
 
     if runner.exists(agent_config['init_file']):
         runner.run(
-            "sudo service celeryd-{0} stop".format(agent_config["name"]))
+            get_service_command('celeryd-{}'.format(agent_config['name']),
+                                'stop'))
     else:
         ctx.logger.debug(
             "Could not find any workers with name {0}. nothing to do."
@@ -256,7 +264,9 @@ def start(ctx, runner, agent_config, **kwargs):
         .format(agent_config['name'],
                 connection_details(agent_config)))
 
-    runner.run("sudo service celeryd-{0} start".format(agent_config["name"]))
+    runner.run(
+        get_service_command('celeryd-{}'.format(agent_config['name']),
+                            'start'))
 
     _wait_for_started(runner, agent_config)
 
@@ -343,8 +353,9 @@ def worker_exists(runner, agent_config):
 
 
 def restart_celery_worker(runner, agent_config):
-    runner.run("sudo service celeryd-{0} restart".format(
-        agent_config['name']))
+    runner.run(
+        get_service_command('celeryd-{}'.format(agent_config['name']),
+                            'restart'))
     _wait_for_started(runner, agent_config)
 
 
