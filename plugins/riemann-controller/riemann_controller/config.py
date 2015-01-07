@@ -20,9 +20,8 @@ from config_constants import Constants
 
 def create(ctx, policy_types, policy_triggers, groups, config_template):
     streams = []
-    for group_name, group in groups.items():
-        for policy_name, policy in group['policies'].items():
-            template = Template(policy_types[policy['type']]['source'])
+    for group_name, group in groups.iteritems():
+        for policy_name, policy in group['policies'].iteritems():
             metadata = {
                 'group': group_name,
                 'policy': policy_name,
@@ -34,10 +33,15 @@ def create(ctx, policy_types, policy_triggers, groups, config_template):
             template_vars = policy['properties']
             template_vars['_metadata'] = metadata
             template_vars['constants'] = Constants
-            data = template.render(**template_vars)
+            src_template = Template(policy_types[policy['type']]['source'])
+            additional_restraints = [
+                Template(ar).render(**template_vars) for ar in
+                    policy['properties'].get('additional_restraints', [])
+            ]
             streams.append({
-                'data': data,
-                'metadata': metadata
+                'data': src_template.render(**template_vars),
+                'metadata': metadata,
+                'additional_restraints':'['+','.join(additional_restraints)+']'
             })
     return Template(config_template).render(
         streams=streams,

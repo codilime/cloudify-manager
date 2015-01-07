@@ -152,6 +152,10 @@ def _process_types_and_triggers(groups, policy_types, policy_triggers):
     for group in groups.values():
         for policy in group['policies'].values():
             types_to_process.add(policy['type'])
+            policy["properties"]["additional_restraints"] = map(
+                _process_source,
+                policy["properties"].get("additional_restraints", [])
+            )
             for trigger in policy['triggers'].values():
                 triggers_to_process.add(trigger['type'])
     for policy_type_name, policy_type in policy_types.items():

@@ -285,6 +285,10 @@ policy_types:
 
     cloudify.policies.types.host_failure:
         properties: &BASIC_AH_POLICY_PROPERTIES
+            service:
+                description: Service names whose events should be taken into consideration
+                default:
+                    - service
             is_node_started_before_workflow:
                 description: Before triggering workflow, check if the node state is started
                 default: true
@@ -293,10 +297,9 @@ policy_types:
                     Trigger workflow only if the last workflow was triggered earlier than interval-between-workflows seconds ago.
                     if < 0  workflows can run concurrently.
                 default: 300
-            service:
-                description: Service names whose events should be taken into consideration
-                default:
-                    - service
+            additional_restraints:
+                description: Additional clojure functions invoked before workflow triggering, determining if we should proceed (returning true) or not (false).
+                default: []
         source: https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/master/resources/rest-service/cloudify/policies/host_failure.clj
 
     cloudify.policies.types.threshold:
