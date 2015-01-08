@@ -300,7 +300,7 @@ policy_types:
             additional_restraints:
                 description: Additional clojure functions invoked before workflow triggering, determining if we should proceed (returning true) or not (false).
                 default: []
-        source: https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/master/resources/rest-service/cloudify/policies/host_failure.clj
+        source: https://raw.githubusercontent.com/codilime/cloudify-manager/failure_healing_policies_further_development/resources/rest-service/cloudify/policies/host_failure.clj
 
     cloudify.policies.types.threshold:
         properties: &THRESHOLD_BASED_POLICY_PROPERTIES
@@ -319,7 +319,7 @@ policy_types:
             stability_time:
                 description: How long a threshold must be breached before the triggers will be processed
                 default: 0
-        source: https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/master/resources/rest-service/cloudify/policies/threshold.clj
+        source: https://raw.githubusercontent.com/codilime/cloudify-manager/failure_healing_policies_further_development/resources/rest-service/cloudify/policies/threshold.clj
 
     cloudify.policies.types.ewma_stabilized:
         properties:
