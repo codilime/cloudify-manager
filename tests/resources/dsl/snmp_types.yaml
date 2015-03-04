@@ -1,0 +1,44 @@
+tosca_definitions_version: cloudify_dsl_1_0
+
+imports:
+    - cloudify/types/types.yaml
+    - plugins/diamond.yaml
+
+
+node_types:
+
+  SNMPProxy:
+    derived_from: cloudify.nodes.Compute # "fake compute"
+    properties:
+      install_agent:
+        default: false
+      diamond_config:
+        default:
+          interval: 1
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: diamond.diamond_agent.tasks.install
+          executor: central_deployment_agent
+          inputs:
+            diamond_config:
+              default: { get_property: [SELF, diamond_config] }
+        start:
+          implementation: diamond.diamond_agent.tasks.start
+          executor: central_deployment_agent
+        stop:
+          implementation: diamond.diamond_agent.tasks.stop
+          executor: central_deployment_agent
+        delete:
+          implementation: diamond.diamond_agent.tasks.uninstall
+          executor: central_deployment_agent
+      cloudify.interfaces.monitoring:
+        start:
+          implementation: diamond.diamond_agent.tasks.add_collectors
+          executor: central_deployment_agent
+          inputs:
+            collectors_config:
+              default:
+                SNMPProxyCollector:
+                  path: collectors/snmpproxy.py
+                  config: {}

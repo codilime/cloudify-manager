@@ -40,6 +40,7 @@ setup(
         'cloudify-diamond-plugin==1.2a6',
         'cloudify-script-plugin==1.2a6',
         'pika==0.9.13',
+        'pysnmp',
         'elasticsearch==1.0.0',
         'celery==3.1.17'
     ],

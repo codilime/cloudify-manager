@@ -267,6 +267,18 @@ def auto_heal_vm(ctx, node_id, diagnose_value=None, **_):
 
 
 @workflow
+def snmp_workflow(ctx, node_id, metric_name, metric=0, **_):
+    instance = ctx.get_node_instance(node_id)
+    instance.execute_operation('test.op1', kwargs={
+        'params': {
+            'monitored_node': node_id,
+            'metric_name': metric_name,
+            'metric': metric
+        }
+    })
+
+
+@workflow
 def operation_mapping1(ctx, **_):
     node1 = list(ctx.get_node('node1').instances)[0]
     node2_rel = list(list(ctx.get_node('node2').instances)[0].relationships)[0]

@@ -14,11 +14,15 @@
 #    * limitations under the License.
 
 
+import contextlib
+import os
 import time
 from collections import namedtuple
 
 from riemann_controller.config_constants import Constants
 
+
+import testenv
 from testenv import TestEnvironment
 from testenv import TestCase
 from testenv import utils
@@ -59,6 +63,19 @@ class PoliciesTestsBase(TestCase):
             self.assertEqual(expected_count, len(executions))
         self.do_assertions(assertion)
 
+    def _wait_for_terminated_execution(self,
+                                       timeout=30,
+                                       workflow_id='heal',
+                                       num_of_workflows=1):
+        def is_workflow_terminated():
+            found_workflows = 0
+            for e in self.client.executions.list(
+                    deployment_id=self.deployment.id):
+                if e.workflow_id == workflow_id and e.status == 'terminated':
+                    found_workflows += 1
+            return found_workflows == num_of_workflows
+        utils.do_retries_boolean(is_workflow_terminated, timeout)
+
     def wait_for_invocations(self, deployment_id, expected_count):
         def assertion():
             _invocations = self.get_plugin_data(
@@ -95,6 +112,17 @@ class PoliciesTestsBase(TestCase):
 
 class TestPolicies(PoliciesTestsBase):
 
+    @contextlib.contextmanager
+    def _deploy(self, yaml_file, num_of_instances=1):
+        self.launch_deployment(yaml_file, num_of_instances)
+        yield
+        try:
+            if self.deployment:
+                undeploy(self.deployment.id)
+        except BaseException as e:
+            if e.message:
+                self.logger.warning(e.message)
+
     def test_policies_flow(self):
         self.launch_deployment('dsl/with_policies1.yaml')
 
@@ -111,19 +139,43 @@ class TestPolicies(PoliciesTestsBase):
         self.assertEqual(metric_value, invocations[1]['metric'])
 
     def test_policies_flow_with_diamond(self):
-        try:
-            self.launch_deployment('dsl/with_policies_and_diamond.yaml')
+        with self._deploy('dsl/with_policies_and_diamond.yaml'):
             expected_metric_value = 42
             self.wait_for_executions(self.NUM_OF_INITIAL_WORKFLOWS + 1)
             invocations = self.wait_for_invocations(self.deployment.id, 1)
             self.assertEqual(expected_metric_value, invocations[0]['metric'])
-        finally:
+
+    def test_snmp_diamond_integration(self):
+        @contextlib.contextmanager
+        def snmpd():
+            snmpd_dir = "{}/snmpd/".format(
+                testenv.testenv_instance.test_working_dir)
+            os.mkdir(snmpd_dir)
+            path_to_snmpd_conf = resource("dsl/configs/snmpd.conf")
+            path_to_snmpd_logs = "{}snmpd.log".format(snmpd_dir)
+            path_to_snmpd_pid = "{}pid".format(snmpd_dir)
+            os.system("snmpd -V -C -c {} -Lf {} -p {}".format(
+                path_to_snmpd_conf,
+                path_to_snmpd_logs,
+                path_to_snmpd_pid
+            ))
+            yield
             try:
-                if self.deployment:
-                    undeploy(self.deployment.id)
-            except BaseException as e:
+                os.system("kill $(cat {})".format(path_to_snmpd_pid))
+            except Exception as e:
                 if e.message:
                     self.logger.warning(e.message)
+
+        with snmpd():
+            with self._deploy('dsl/snmp_diamond_integration.yaml', 2):
+                self.wait_for_executions(self.NUM_OF_INITIAL_WORKFLOWS + 1)
+                self._wait_for_terminated_execution(
+                    workflow_id='snmp_workflow'
+                )
+                inv = self.wait_for_invocations(self.deployment.id, 1)[0]
+                self.assertIn('cpu_load', inv['metric_name'])
+                snmp_device = self.get_node_instance_by_name('SNMPDevice').id
+                self.assertEqual(snmp_device, inv['monitored_node'])
 
     def test_threshold_policy(self):
         self.launch_deployment('dsl/with_policies2.yaml')
@@ -338,19 +390,6 @@ class TestAutohealPolicies(PoliciesTestsBase):
     def _publish_event_and_wait_for_its_expiration(self, node_name='node'):
         self._publish_heart_beat_event(node_name)
         self._wait_for_event_expiration()
-
-    def _wait_for_terminated_execution(self,
-                                       timeout=30,
-                                       workflow_id='heal',
-                                       num_of_workflows=1):
-        def is_workflow_terminated():
-            found_workflows = 0
-            for e in self.client.executions.list(
-                    deployment_id=self.deployment.id):
-                if e.workflow_id == workflow_id and e.status == 'terminated':
-                    found_workflows += 1
-            return found_workflows == num_of_workflows
-        utils.do_retries_boolean(is_workflow_terminated, timeout)
 
     def test_autoheal_policy_triggering(self):
         self.launch_deployment(self.SIMPLE_AUTOHEAL_POLICY_YAML)
