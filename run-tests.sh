@@ -76,11 +76,6 @@ run_intergration_tests()
     sudo test -d /dev/shm && sudo rm -rf /dev/shm
     sudo ln -Tsf /{run,dev}/shm
     sudo chmod 777 /dev/shm  # for celery worker
-    # installing snmpd and disabling its start on system boot
-    sudo apt-get install snmpd
-    sudo service snmpd stop
-    sudo update-rc.d -f snmpd remove
-    sudo update-rc.d snmpd stop 0 1 2 3 4 5 6 S .
 
     pip install -r tests/dev-requirements.txt
     pushd rest-service && pip install . -r dev-requirements.txt && popd

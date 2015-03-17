@@ -22,6 +22,10 @@ setup(
     author_email='cosmo-admin@gigaspaces.com',
     packages=['testenv',
               'testenv.processes',
+              'pysnmp',
+              'pysnmp.entity',
+              'pysnmp.entity.rfc3413',
+              'pysnmp.entity.rfc3413.oneliner',
               'mock_plugins',
               'mock_plugins.cloudmock',
               'mock_plugins.connection_configurer_mock',
@@ -40,7 +44,6 @@ setup(
         'cloudify-diamond-plugin==1.2a6',
         'cloudify-script-plugin==1.2a6',
         'pika==0.9.13',
-        'pysnmp',
         'elasticsearch==1.0.0',
         'celery==3.1.17'
     ],
