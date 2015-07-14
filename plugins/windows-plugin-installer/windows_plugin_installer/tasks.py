@@ -28,6 +28,7 @@ _NSSM_PATH_FORMAT = '{0}\\nssm\\nssm.exe'
 # Holds the AppParameters set for the service
 _APP_PARAMETERS_FILE_PATH_FORMAT = '{0}\AppParameters'
 
+_SERVICE_NAME_FORMAT = 'CloudifyAgent{0}'
 
 logger = utils.setup_logger('plugin_installer.tasks')
 
@@ -46,15 +47,16 @@ def install(ctx, plugins, **kwargs):
 
     global logger
     logger = ctx.logger
-
+    manager_uid = ctx.bootstrap_context.manager_uid
+    service_name = _SERVICE_NAME_FORMAT.format(manager_uid)
     base_dir = os.environ[constants.CELERY_WORK_DIR_PATH_KEY]
     for plugin in plugins:
         logger.info('Installing plugin {0}'.format(plugin['name']))
         url = get_url(ctx.blueprint.id, plugin)
-        install_celery_plugin(url, base_dir)
+        install_celery_plugin(url, base_dir, service_name)
 
 
-def install_celery_plugin(plugin_url, base_dir):
+def install_celery_plugin(plugin_url, base_dir, service_name):
 
     """
     Installs celery tasks into the cloudify agent.
@@ -73,7 +75,7 @@ def install_celery_plugin(plugin_url, base_dir):
     ).run(command)
     plugin_name = plugin_utils.extract_plugin_name(plugin_url)
     module_paths = plugin_utils.extract_module_paths(plugin_name)
-    _update_includes(module_paths, base_dir)
+    _update_includes(module_paths, base_dir, service_name)
 
 
 def read_app_parameters(app_parameters_file_path):
@@ -100,7 +102,7 @@ def write_app_parameters(app_parameters, app_parameters_file_path):
         f.write(app_parameters)
 
 
-def _update_includes(module_paths, base_dir):
+def _update_includes(module_paths, base_dir, service_name):
     app_parameters_file_path = _APP_PARAMETERS_FILE_PATH_FORMAT.format(
         base_dir)
     # Read current AppParameters
@@ -113,8 +115,8 @@ def _update_includes(module_paths, base_dir):
     utils.LocalCommandRunner(
         host=utils.get_local_ip()
     ).run(
-        'cmd /c "{0} set CloudifyAgent AppParameters {1}"'
-        .format(nssm_path, new_app_parameters))
+        'cmd /c "{0} set {2} AppParameters {1}"'
+        .format(nssm_path, new_app_parameters, service_name))
 
     # Write new AppParameters
     write_app_parameters(
