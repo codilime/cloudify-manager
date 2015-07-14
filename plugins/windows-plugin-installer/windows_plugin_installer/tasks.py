@@ -16,17 +16,17 @@
 import os
 import sys
 
+from cloudify import constants
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
 from cloudify import utils
 
 from windows_plugin_installer import plugin_utils
 
-# Hard coded path for now - agents are always installed to this path.
-NSSM_PATH = 'C:\CloudifyAgent\\nssm\\nssm.exe'
+_NSSM_PATH_FORMAT = '{0}\\nssm\\nssm.exe'
 
 # Holds the AppParameters set for the service
-APP_PARAMETERS_FILE_PATH = 'C:\CloudifyAgent\AppParameters'
+_APP_PARAMETERS_FILE_PATH_FORMAT = '{0}\AppParameters'
 
 
 logger = utils.setup_logger('plugin_installer.tasks')
@@ -47,13 +47,14 @@ def install(ctx, plugins, **kwargs):
     global logger
     logger = ctx.logger
 
+    base_dir = os.environ[constants.CELERY_WORK_DIR_PATH_KEY]
     for plugin in plugins:
         logger.info('Installing plugin {0}'.format(plugin['name']))
         url = get_url(ctx.blueprint.id, plugin)
-        install_celery_plugin(url)
+        install_celery_plugin(url, base_dir)
 
 
-def install_celery_plugin(plugin_url):
+def install_celery_plugin(plugin_url, base_dir):
 
     """
     Installs celery tasks into the cloudify agent.
@@ -72,49 +73,53 @@ def install_celery_plugin(plugin_url):
     ).run(command)
     plugin_name = plugin_utils.extract_plugin_name(plugin_url)
     module_paths = plugin_utils.extract_module_paths(plugin_name)
-    _update_includes(module_paths)
+    _update_includes(module_paths, base_dir)
 
 
-def read_app_parameters():
-    if not os.path.exists(APP_PARAMETERS_FILE_PATH):
+def read_app_parameters(app_parameters_file_path):
+    if not os.path.exists(app_parameters_file_path):
         raise NonRecoverableError(
             '{0} does not exist'
-            .format(APP_PARAMETERS_FILE_PATH))
-    with open(name=APP_PARAMETERS_FILE_PATH, mode='r') as f:
+            .format(app_parameters_file_path))
+    with open(name=app_parameters_file_path, mode='r') as f:
         app_parameters = f.read().strip()
         if not app_parameters:
             raise NonRecoverableError(
                 '{0} is blank'
-                .format(APP_PARAMETERS_FILE_PATH))
+                .format(app_parameters_file_path))
         return app_parameters
 
 
-def write_app_parameters(app_parameters):
-    if not os.path.exists(APP_PARAMETERS_FILE_PATH):
+def write_app_parameters(app_parameters, app_parameters_file_path):
+    if not os.path.exists(app_parameters_file_path):
         raise NonRecoverableError(
             '{0} does not exist'
-            .format(APP_PARAMETERS_FILE_PATH))
-    os.remove(APP_PARAMETERS_FILE_PATH)
-    with open(name=APP_PARAMETERS_FILE_PATH, mode='w') as f:
+            .format(app_parameters_file_path))
+    os.remove(app_parameters_file_path)
+    with open(name=app_parameters_file_path, mode='w') as f:
         f.write(app_parameters)
 
 
-def _update_includes(module_paths):
-
+def _update_includes(module_paths, base_dir):
+    app_parameters_file_path = _APP_PARAMETERS_FILE_PATH_FORMAT.format(
+        base_dir)
     # Read current AppParameters
-    app_parameters = read_app_parameters()
+    app_parameters = read_app_parameters(app_parameters_file_path)
 
     new_app_parameters = add_module_paths_to_includes(
         module_paths,
         app_parameters)
+    nssm_path = _NSSM_PATH_FORMAT.format(base_dir)
     utils.LocalCommandRunner(
         host=utils.get_local_ip()
     ).run(
         'cmd /c "{0} set CloudifyAgent AppParameters {1}"'
-        .format(NSSM_PATH, new_app_parameters))
+        .format(nssm_path, new_app_parameters))
 
     # Write new AppParameters
-    write_app_parameters(new_app_parameters)
+    write_app_parameters(
+        new_app_parameters,
+        app_parameters_file_path)
 
 
 def add_module_paths_to_includes(module_paths, app_parameters):
