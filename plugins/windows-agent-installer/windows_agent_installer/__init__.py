@@ -24,6 +24,11 @@ from windows_agent_installer import constants
 from windows_agent_installer.winrm_runner import WinRMRunner
 
 
+_BASE_DIR_FORMAT = 'C:\CloudifyAgent{0}'
+_SERVICE_NAME_FORMAT = 'CloudifyAgent{0}'
+_EXEC_FILE_FORMAT = 'CloudifyAgent{}.exe'
+
+
 def init_worker_installer(func):
 
     """
@@ -97,6 +102,12 @@ def prepare_configuration(ctx, cloudify_agent):
     # runtime info
     cloudify_agent['name'] = ctx.instance.id
     cloudify_agent['host'] = _get_machine_ip(ctx)
+    cloudify_agent['base_dir'] = _BASE_DIR_FORMAT.format(
+        ctx.bootstrap_context.manager_uid)
+    cloudify_agent['service_name'] = _SERVICE_NAME_FORMAT.format(
+        ctx.bootstrap_context.manager_uid)
+    cloudify_agent['exec_file'] = _EXEC_FILE_FORMAT.format(
+        ctx.bootstrap_context.manager_uid)
 
 
 def set_bootstrap_context_parameters(bootstrap_context, cloudify_agent):

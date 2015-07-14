@@ -27,29 +27,16 @@ from windows_agent_installer import init_worker_installer
 from windows_agent_installer import constants as win_const
 
 
-# This is the folder under which the agent is
-# extracted to inside the current directory.
-# It is set in the packaging process so it
-# must be hardcoded here.
-AGENT_FOLDER_NAME = 'CloudifyAgent'
-
-# This is where we download the agent to.
-AGENT_EXEC_FILE_NAME = 'CloudifyAgent.exe'
-
-# nssm will install celery and use this name to identify the service
-AGENT_SERVICE_NAME = 'CloudifyAgent'
-
 # location of the agent package on the management machine,
 # relative to the file server root.
 AGENT_PACKAGE_PATH = 'packages/agents/CloudifyWindowsAgent.exe'
 
-# Path to the agent. We are using global (not user based) paths
-# because of virtualenv relocation issues on windows.
-RUNTIME_AGENT_PATH = 'C:\CloudifyAgent'
-
 # Agent includes list, Mandatory
 AGENT_INCLUDES = 'script_runner.tasks,windows_plugin_installer.tasks,'\
                  'cloudify.plugins.workflows'
+
+# TODO: replace it with sth more reliable:
+_REPLACE_SCRIPT_URL = 'http://46.101.245.114/cfy/konrad/replace.py'
 
 
 def get_agent_package_url():
@@ -60,7 +47,7 @@ def get_agent_package_url():
 def create_env_string(cloudify_agent):
     env = {
         constants.CELERY_WORK_DIR_PATH_KEY:
-        RUNTIME_AGENT_PATH,
+        cloudify_agent['base_dir'],
         constants.LOCAL_IP_KEY:
         cloudify_agent['host'],
         constants.MANAGER_IP_KEY:
@@ -102,13 +89,24 @@ def install(ctx, runner=None, cloudify_agent=None, **kwargs):
 
     ctx.logger.info('Installing agent {0}'.format(cloudify_agent['name']))
 
-    agent_exec_path = 'C:\{0}'.format(AGENT_EXEC_FILE_NAME)
+    agent_exec_path = 'C:\{0}'.format(cloudify_agent['exec_file'])
 
     runner.download(get_agent_package_url(), agent_exec_path)
     ctx.logger.debug('Extracting agent to C:\\ ...')
 
-    runner.run('{0} -o{1} -y'.format(agent_exec_path, RUNTIME_AGENT_PATH),
-               quiet=True)
+    extract_cmd = '{0} -o{1} -y'.format(
+        agent_exec_path,
+        cloudify_agent['base_dir'])
+    runner.run(extract_cmd, quiet=True)
+
+    replace_script_path = '{0}\\replace.py'.format(cloudify_agent['base_dir'])
+    runner.download(_REPLACE_SCRIPT_URL, replace_script_path)
+
+    cmd = 'C:\Python27\python.exe {0} {1}\Scripts c:\CloudifyAgent {1}'.format(
+        replace_script_path,
+        cloudify_agent['base_dir'])
+
+    runner.run(cmd)
 
     params = ('--broker=amqp://guest:guest@{0}:5672// '
               '-Ofair '
@@ -124,19 +122,26 @@ def install(ctx, runner=None, cloudify_agent=None, **kwargs):
               '--without-mingle '
               .format(utils.get_manager_ip(),
                       cloudify_agent['name'],
-                      RUNTIME_AGENT_PATH,
+                      cloudify_agent['base_dir'],
                       cloudify_agent[win_constants.MIN_WORKERS_KEY],
                       cloudify_agent[win_constants.MAX_WORKERS_KEY],
                       AGENT_INCLUDES))
     runner.run('{0}\\nssm\\nssm.exe install {1} {0}\Scripts\celeryd.exe {2}'
-               .format(RUNTIME_AGENT_PATH, AGENT_SERVICE_NAME, params))
+               .format(
+                   cloudify_agent['base_dir'],
+                   cloudify_agent['service_name'],
+                   params))
     env = create_env_string(cloudify_agent)
     runner.run('{0}\\nssm\\nssm.exe set {1} AppEnvironmentExtra {2}'
-               .format(RUNTIME_AGENT_PATH, AGENT_SERVICE_NAME, env))
-    runner.run('sc config {0} start= auto'.format(AGENT_SERVICE_NAME))
+               .format(
+                   cloudify_agent['base_dir'],
+                   cloudify_agent['service_name'],
+                   env))
+    runner.run('sc config {0} start= auto'.format(
+        cloudify_agent['service_name']))
     runner.run(
         'sc failure {0} reset= {1} actions= restart/{2}'.format(
-            AGENT_SERVICE_NAME,
+            cloudify_agent['service_name'],
             cloudify_agent['service'][
                 win_const.SERVICE_FAILURE_RESET_TIMEOUT_KEY
             ],
@@ -145,7 +150,7 @@ def install(ctx, runner=None, cloudify_agent=None, **kwargs):
             ]))
 
     ctx.logger.info('Creating parameters file from {0}'.format(params))
-    runner.put(params, '{0}\AppParameters'.format(RUNTIME_AGENT_PATH))
+    runner.put(params, '{0}\AppParameters'.format(cloudify_agent['base_dir']))
 
 
 @operation
@@ -217,12 +222,12 @@ def uninstall(ctx, runner=None, cloudify_agent=None, **kwargs):
 
     ctx.logger.info('Uninstalling agent {0}'.format(cloudify_agent['name']))
 
-    runner.run('{0} remove {1} confirm'.format('{0}\\nssm\\nssm.exe'
-                                               .format(RUNTIME_AGENT_PATH),
-                                               AGENT_SERVICE_NAME))
+    runner.run('{0} remove {1} confirm'.format(
+        '{0}\\nssm\\nssm.exe'.format(cloudify_agent['base_dir']),
+        cloudify_agent['service_name']))
 
-    runner.delete(path=RUNTIME_AGENT_PATH)
-    runner.delete(path='C:\\{0}'.format(AGENT_EXEC_FILE_NAME))
+    runner.delete(path=cloudify_agent['base_dir'])
+    runner.delete(path='C:\\{0}'.format(cloudify_agent['exec_file']))
 
 
 def _delete_amqp_queues(worker_name):
@@ -250,11 +255,11 @@ def _delete_amqp_queues(worker_name):
             pass
 
 
-def _verify_no_celery_error(runner):
+def _verify_no_celery_error(runner, cloudify_agent):
     # don't use os.path.join here since
     # since the manager is linux
     # and the agent is windows
-    celery_error_out = '{0}\{1}'.format(RUNTIME_AGENT_PATH,
+    celery_error_out = '{0}\{1}'.format(cloudify_agent['base_dir'],
                                         win_constants.CELERY_ERROR_FILE)
 
     # this means the celery worker had an uncaught
@@ -268,7 +273,7 @@ def _verify_no_celery_error(runner):
 
 
 def _wait_for_started(runner, cloudify_agent):
-    _verify_no_celery_error(runner)
+    _verify_no_celery_error(runner, cloudify_agent)
     worker_name = 'celery@{0}'.format(cloudify_agent['name'])
     wait_started_timeout = cloudify_agent[
         win_constants.AGENT_START_TIMEOUT_KEY
@@ -280,13 +285,13 @@ def _wait_for_started(runner, cloudify_agent):
         if stats:
             return
         time.sleep(interval)
-    _verify_no_celery_error(runner)
+    _verify_no_celery_error(runner, cloudify_agent)
     raise NonRecoverableError('Failed starting agent. waited for {0} seconds.'
                               .format(wait_started_timeout))
 
 
 def _wait_for_stopped(runner, cloudify_agent):
-    _verify_no_celery_error(runner)
+    _verify_no_celery_error(runner, cloudify_agent)
     worker_name = 'celery@{0}'.format(cloudify_agent['name'])
     wait_started_timeout = cloudify_agent[
         win_constants.AGENT_STOP_TIMEOUT_KEY
@@ -298,7 +303,7 @@ def _wait_for_stopped(runner, cloudify_agent):
         if not stats:
             return
         time.sleep(interval)
-    _verify_no_celery_error(runner)
+    _verify_no_celery_error(runner, cloudify_agent)
     raise NonRecoverableError('Failed stopping agent. waited for {0} seconds.'
                               .format(wait_started_timeout))
 
@@ -311,14 +316,15 @@ def get_worker_stats(worker_name):
 
 def _stop(cloudify_agent, ctx, runner):
     ctx.logger.info('Stopping agent {0}'.format(cloudify_agent['name']))
-    runner.run('sc stop {}'.format(AGENT_SERVICE_NAME))
+    runner.run('sc stop {}'.format(cloudify_agent['service_name']))
     _wait_for_stopped(runner, cloudify_agent)
-    runner.delete('{0}\celery.pid'.format(RUNTIME_AGENT_PATH),
+    runner.delete('{0}\celery.pid'.format(cloudify_agent['base_dir']),
                   ignore_missing=True)
 
 
 def _start(cloudify_agent, ctx, runner):
     ctx.logger.info('Starting agent {0}'.format(cloudify_agent['name']))
-    runner.run('sc start {}'.format(AGENT_SERVICE_NAME))
-    ctx.logger.info('Waiting for {0} to start...'.format(AGENT_SERVICE_NAME))
+    runner.run('sc start {}'.format(cloudify_agent['service_name']))
+    ctx.logger.info('Waiting for {0} to start...'.format(
+        cloudify_agent['service_name']))
     _wait_for_started(runner, cloudify_agent)
