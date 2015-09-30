@@ -38,3 +38,20 @@ class BlueprintState(BlueprintStateV1):
         super(BlueprintState, self).__init__(**kwargs)
         self.description = kwargs['description']
         self.main_file_name = kwargs['main_file_name']
+
+
+@swagger.model
+class Snapshot(object):
+
+    resource_fields = {
+        'id': fields.String,
+        'created_at': fields.String,
+        'status': fields.String,
+        'error': fields.String
+    }
+
+    def __init__(self, **kwargs):
+        self.id = kwargs['id']
+        self.created_at = kwargs['created_at']
+        self.status = kwargs['status']
+        self.error = kwargs['error']
