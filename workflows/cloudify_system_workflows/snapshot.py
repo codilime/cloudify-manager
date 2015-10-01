@@ -152,7 +152,7 @@ def _create(ctx, snapshot_id, config, include_metrics, include_credentials,
     # elasticsearch
     es = _create_es_client(config)
     has_cloudify_events = es.indices.exists(index=_EVENTS_INDEX_NAME)
-    _dump_elasticsearch(tempdir, es, has_cloudify_events)
+    _dump_elasticsearch(tempdir, es, ctx.execution_id, has_cloudify_events)
 
     metadata[_M_HAS_CLOUDIFY_EVENTS] = has_cloudify_events
 
@@ -201,11 +201,13 @@ def create(ctx, snapshot_id, config, **kwargs):
         raise
 
 
-def _dump_elasticsearch(tempdir, es, has_cloudify_events):
+def _dump_elasticsearch(tempdir, es, execution_id, has_cloudify_events):
     storage_scan = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME)
     storage_scan = _except_types(storage_scan,
                                  'provider_context',
                                  'snapshot')
+    storage_scan = (e for e in storage_scan if e['_id'] != execution_id)
+
     event_scan = elasticsearch.helpers.scan(
         es,
         index=_EVENTS_INDEX_NAME if has_cloudify_events else 'logstash-*'
