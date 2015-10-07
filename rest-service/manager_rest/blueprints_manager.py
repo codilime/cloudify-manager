@@ -161,7 +161,8 @@ class BlueprintsManager(object):
 
         return execution
 
-    def restore_snapshot(self, snapshot_id, recreate_deployments_envs):
+    def restore_snapshot(self, snapshot_id, recreate_deployments_envs,
+                         clear_manager):
         self.get_snapshot(snapshot_id)  # Throws error if no snapshot found
         _, execution = self._execute_system_workflow(
             wf_id='restore_snapshot',
@@ -169,6 +170,7 @@ class BlueprintsManager(object):
             execution_parameters={
                 'snapshot_id': snapshot_id,
                 'recreate_deployments_envs': recreate_deployments_envs,
+                'clear_manager': clear_manager,
                 'config': self._get_conf_for_snapshots_wf()
             }
         )

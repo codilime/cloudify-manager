@@ -319,13 +319,36 @@ def _update_es_node(es_node):
             source['description'] = ''
 
 
-def _restore_elasticsearch(ctx, tempdir, es, metadata):
+def _clear_elasticsearch(ctx, es):
     ctx.send_event('Deleting all ElasticSearch data')
     elasticsearch.helpers.bulk(
         es,
         _clean_up_db_before_restore(es, ctx.execution_id))
     es.indices.flush()
 
+
+def _assert_clean_elasticsearch(es):
+    exception = NonRecoverableError('Manager is not clean')
+
+    # check events
+    has_cloudify_events_index = es.indices.exists(index=_EVENTS_INDEX_NAME)
+    if has_cloudify_events_index:
+        events_index_name = _EVENTS_INDEX_NAME
+    else:
+        events_index_name = 'logstash-*'
+
+    res = es.count(index=events_index_name)
+    if res['count'] != '0':
+        raise exception
+
+    # check storage
+    storage_scan = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME)
+    storage_scan = _except_types(storage_scan, 'provider_context', 'snapshot')
+    if next(storage_scan, False):
+        raise exception
+
+
+def _restore_elasticsearch(ctx, tempdir, es, metadata):
     has_cloudify_events_index = es.indices.exists(index=_EVENTS_INDEX_NAME)
     snap_has_cloudify_events_index = metadata[_M_HAS_CLOUDIFY_EVENTS]
 
@@ -507,11 +530,18 @@ def recreate_deployments_environments(ctx):
 
 
 @workflow(system_wide=True)
-def restore(ctx, snapshot_id, recreate_deployments_envs, config, **kwargs):
+def restore(ctx, snapshot_id, recreate_deployments_envs, clear_manager,
+            config, **kwargs):
     mappings = {
         '3.3': _restore_snapshot_format_3_3,
         '3.2': _restore_snapshot_format_3_2
     }
+
+    es = _create_es_client(config)
+    if clear_manager:
+        _clear_elasticsearch(ctx, es)
+    else:
+        _assert_clean_elasticsearch(es)
 
     config = _DictToAttributes(config)
     tempdir = tempfile.mkdtemp('-snapshot-data')

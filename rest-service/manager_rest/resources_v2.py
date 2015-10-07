@@ -257,13 +257,20 @@ class SnapshotsIdRestore(SecuredResource):
         request_json = request.json
         verify_parameter_in_request_body('recreate_deployments_envs',
                                          request_json)
+        verify_parameter_in_request_body('clear_manager',
+                                         request_json)
         recreate_deployments_envs = verify_and_convert_bool(
             'recreate_deployments_envs',
             request_json['recreate_deployments_envs']
         )
+        clear_manager = verify_and_convert_bool(
+            'clear_manager',
+            request_json['clear_manager']
+        )
         execution = get_blueprints_manager().restore_snapshot(
             snapshot_id,
-            recreate_deployments_envs
+            recreate_deployments_envs,
+            clear_manager
         )
         return execution, 200
 
