@@ -537,13 +537,14 @@ def restore(ctx, snapshot_id, recreate_deployments_envs, clear_manager,
         '3.2': _restore_snapshot_format_3_2
     }
 
+    config = _DictToAttributes(config)
+
     es = _create_es_client(config)
     if clear_manager:
         _clear_elasticsearch(ctx, es)
     else:
         _assert_clean_elasticsearch(es)
 
-    config = _DictToAttributes(config)
     tempdir = tempfile.mkdtemp('-snapshot-data')
 
     try:
