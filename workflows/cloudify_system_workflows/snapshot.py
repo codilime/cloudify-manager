@@ -28,6 +28,7 @@ import elasticsearch.helpers
 from datetime import datetime
 
 from cloudify import utils
+from cloudify.constants import COMPUTE_NODE_TYPE
 from cloudify.context import BootstrapContext
 from cloudify.decorators import workflow
 from cloudify.exceptions import NonRecoverableError
@@ -42,7 +43,6 @@ _METADATA_FILE = 'metadata.json'
 _M_HAS_CLOUDIFY_EVENTS = 'has_cloudify_events'
 _M_VERSION = 'snapshot_version'
 
-_VERSION = '3.3'
 _AGENTS_FILE = 'agents.json'
 _ELASTICSEARCH = 'es_data'
 _CRED_DIR = 'credentials'
@@ -88,27 +88,49 @@ def _get_json_objects(f):
         except:
             pass
 
-    assert not n or not s
+    # assert not n or not s
+    # not (not n or not s) -> n and s
+    if n and s:
+        raise NonRecoverableError('Error during converting InfluxDB dump '
+                                  'data to data appropriate for snapshot.')
 
 
 def _copy_data(archive_root, config, to_archive=True):
-    DATA_TO_COPY = [
+    """
+    Copy files/dirs between snapshot/manager and manager/snapshot.
+
+    :param archive_root: Path to the snapshot archive root.
+    :param config: Config of manager.
+    :param to_archive: If True then copying is from manager to snapshot,
+        otherwise from snapshot to manager.
+    """
+
+    # Files/dirs with constant relative/absolute paths,
+    # where first path is path in manager, second is path in snapshot.
+    # If paths are relative then should be relative to file server (path
+    # in manager) and snapshot archive (path in snapshot). If paths are
+    # absolute then should point to proper data in manager/snapshot archive
+    data_to_copy = [
         (config.file_server_blueprints_folder, 'blueprints'),
         (config.file_server_uploaded_blueprints_folder, 'uploaded-blueprints')
     ]
 
-    # files with constant relative/absolute paths
-    for (p1, p2) in DATA_TO_COPY:
+    for (p1, p2) in data_to_copy:
+        # first expand relative paths
         if p1[0] != '/':
             p1 = os.path.join(config.file_server_root, p1)
         if p2[0] != '/':
             p2 = os.path.join(archive_root, p2)
+
+        # make p1 to always point to source and p2 to target of copying
         if not to_archive:
             p1, p2 = p2, p1
 
+        # source doesn't need to exist, then ignore
         if not os.path.exists(p1):
             continue
 
+        # copy data (and override if target exists)
         if os.path.isfile(p1):
             shutil.copy(p1, p2)
         else:
@@ -134,6 +156,14 @@ def _clean_up_db_before_restore(es_client, wf_exec_id):
             yield doc
 
 
+def _get_manager_version(client=None):
+    if client is None:
+        client = get_rest_client()
+
+    version_json = client.manager.get_version()
+    return '.'.join(version_json['version'].split('.')[0:2])
+
+
 def _create(ctx, snapshot_id, config, include_metrics, include_credentials,
             **kw):
     tempdir = tempfile.mkdtemp('-snapshot-data')
@@ -143,52 +173,53 @@ def _create(ctx, snapshot_id, config, include_metrics, include_credentials,
         config.file_server_snapshots_folder
     )
 
-    if not os.path.exists(snapshots_dir):
-        os.makedirs(snapshots_dir)
+    try:
+        if not os.path.exists(snapshots_dir):
+            os.makedirs(snapshots_dir)
 
-    metadata = {}
+        metadata = {}
 
-    # files/dirs copy
-    _copy_data(tempdir, config)
+        # files/dirs copy
+        _copy_data(tempdir, config)
 
-    # elasticsearch
-    es = _create_es_client(config)
-    has_cloudify_events = es.indices.exists(index=_EVENTS_INDEX_NAME)
-    _dump_elasticsearch(tempdir, es, ctx.execution_id, has_cloudify_events)
+        # elasticsearch
+        es = _create_es_client(config)
+        has_cloudify_events = es.indices.exists(index=_EVENTS_INDEX_NAME)
+        _dump_elasticsearch(ctx, tempdir, es, has_cloudify_events)
 
-    metadata[_M_HAS_CLOUDIFY_EVENTS] = has_cloudify_events
+        metadata[_M_HAS_CLOUDIFY_EVENTS] = has_cloudify_events
 
-    # influxdb
-    if include_metrics:
-        _dump_influxdb(tempdir)
+        # influxdb
+        if include_metrics:
+            _dump_influxdb(ctx, tempdir)
 
-    # credentials
-    if include_credentials:
-        ctx.load_deployments_contexts()
-        _dump_credentials(ctx, tempdir)
+        # credentials
+        if include_credentials:
+            ctx.load_deployments_contexts()
+            _dump_credentials(ctx, tempdir)
 
-    # version
-    metadata[_M_VERSION] = _VERSION
+        # version
+        metadata[_M_VERSION] = _get_manager_version()
 
-    # metadata
-    with open(os.path.join(tempdir, _METADATA_FILE), 'w') as f:
-        json.dump(metadata, f)
+        # metadata
+        with open(os.path.join(tempdir, _METADATA_FILE), 'w') as f:
+            json.dump(metadata, f)
 
-    # agents
-    _dump_agents(tempdir, ctx)
+        # agents
+        _dump_agents(ctx, tempdir)
 
-    # zip
-    snapshot_dir = os.path.join(snapshots_dir, snapshot_id)
-    os.makedirs(snapshot_dir)
+        # zip
+        snapshot_dir = os.path.join(snapshots_dir, snapshot_id)
+        os.makedirs(snapshot_dir)
 
-    shutil.make_archive(
-        os.path.join(snapshot_dir, snapshot_id),
-        'zip',
-        tempdir
-    )
-
-    # end
-    shutil.rmtree(tempdir)
+        shutil.make_archive(
+            os.path.join(snapshot_dir, snapshot_id),
+            'zip',
+            tempdir
+        )
+        # end
+    finally:
+        shutil.rmtree(tempdir)
 
 
 @workflow(system_wide=True)
@@ -203,12 +234,13 @@ def create(ctx, snapshot_id, config, **kwargs):
         raise
 
 
-def _dump_elasticsearch(tempdir, es, execution_id, has_cloudify_events):
+def _dump_elasticsearch(ctx, tempdir, es, has_cloudify_events):
+    ctx.send_event('Dumping elasticsearch data')
     storage_scan = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME)
     storage_scan = _except_types(storage_scan,
                                  'provider_context',
                                  'snapshot')
-    storage_scan = (e for e in storage_scan if e['_id'] != execution_id)
+    storage_scan = (e for e in storage_scan if e['_id'] != ctx.execution_id)
 
     event_scan = elasticsearch.helpers.scan(
         es,
@@ -217,25 +249,31 @@ def _dump_elasticsearch(tempdir, es, execution_id, has_cloudify_events):
 
     with open(os.path.join(tempdir, _ELASTICSEARCH), 'w') as f:
         for item in itertools.chain(storage_scan, event_scan):
-            f.write(json.dumps(item) + '\n')
+            f.write(json.dumps(item) + os.linesep)
 
 
-def _dump_influxdb(tempdir):
+def _dump_influxdb(ctx, tempdir):
+    ctx.send_event('Dumping InfluxDB data')
     influxdb_file = os.path.join(tempdir, _INFLUXDB)
     influxdb_temp_file = influxdb_file + '.temp'
-    subprocess.call(_INFLUXDB_DUMP_CMD.format(influxdb_temp_file), shell=True)
+    rcode = subprocess.call(_INFLUXDB_DUMP_CMD.format(influxdb_temp_file),
+                            shell=True)
+    if rcode != 0:
+        raise NonRecoverableError('Error during dumping InfluxDB data, '
+                                  'error code: {0}'.format(rcode))
     with open(influxdb_temp_file, 'r') as f, open(influxdb_file, 'w') as g:
         for obj in _get_json_objects(f):
-            g.write(obj + '\n')
+            g.write(obj + os.linesep)
 
     os.remove(influxdb_temp_file)
 
 
 def _is_compute(node):
-    return 'cloudify.nodes.Compute' in node.type_hierarchy
+    return COMPUTE_NODE_TYPE in node.type_hierarchy
 
 
 def _dump_credentials(ctx, tempdir):
+    ctx.send_event('Dumping credentials data')
     archive_cred_path = os.path.join(tempdir, _CRED_DIR)
     os.makedirs(archive_cred_path)
 
@@ -272,11 +310,11 @@ def _get_broker_configuration(client):
     return attributes
 
 
-def _dump_agents(tempdir, ctx):
+def _dump_agents(ctx, tempdir):
     ctx.logger.info('Preparing agents data.')
     client = get_rest_client()
     defaults = _get_broker_configuration(client)
-    defaults['version'] = _VERSION
+    defaults['version'] = _get_manager_version(client)
     result = {}
     for deployment in client.deployments.list():
         deployment_result = {}
@@ -320,7 +358,7 @@ def _update_es_node(es_node):
     if es_node['_type'] == 'node':
         source = es_node['_source']
         type_hierarchy = source.get('type_hierarchy', [])
-        if 'cloudify.nodes.Compute' in type_hierarchy:
+        if COMPUTE_NODE_TYPE in type_hierarchy:
             operations = source['operations']
             op_name = 'cloudify.interfaces.cloudify_agent.create_amqp'
             if op_name not in operations:
@@ -340,6 +378,8 @@ def _update_es_node(es_node):
         source = es_node['_source']
         if 'description' not in source:
             source['description'] = ''
+        if 'main_file_name' not in source:
+            source['main_file_name'] = ''
 
 
 def _restore_elasticsearch(ctx, tempdir, es, metadata):
@@ -360,7 +400,7 @@ def _restore_elasticsearch(ctx, tempdir, es, metadata):
             yield elem
 
     # logstash-* -> cloudify_events
-    def l_to_ce():
+    def logstash_to_cloudify_events():
         for elem in get_data_itr():
             if elem['_index'].startswith('logstash-'):
                 elem['_index'] = _EVENTS_INDEX_NAME
@@ -374,7 +414,7 @@ def _restore_elasticsearch(ctx, tempdir, es, metadata):
     def get_event_date(e):
         return e['_source']['@timestamp']
 
-    def ce_to_l():
+    def cloudify_events_to_logstash():
         event_indices = []
         for elem in get_data_itr():
             if elem['_index'] == _EVENTS_INDEX_NAME:
@@ -393,9 +433,9 @@ def _restore_elasticsearch(ctx, tempdir, es, metadata):
              not snap_has_cloudify_events_index):
         data_iter = get_data_itr()
     elif not snap_has_cloudify_events_index and has_cloudify_events_index:
-        data_iter = l_to_ce()
+        data_iter = logstash_to_cloudify_events()
     else:
-        data_iter = ce_to_l()
+        data_iter = cloudify_events_to_logstash()
 
     ctx.send_event('Restoring ElasticSearch data')
     elasticsearch.helpers.bulk(es, data_iter)
@@ -406,7 +446,11 @@ def _restore_influxdb_3_3(ctx, tempdir):
     ctx.send_event('Restoring InfluxDB metrics')
     influxdb_f = os.path.join(tempdir, _INFLUXDB)
     if os.path.exists(influxdb_f):
-        subprocess.call(_INFLUXDB_RESTORE_CMD.format(influxdb_f), shell=True)
+        rcode = subprocess.call(_INFLUXDB_RESTORE_CMD.format(influxdb_f),
+                                shell=True)
+        if rcode != 0:
+            raise NonRecoverableError('Error during restoring InfluxDB data, '
+                                      'error code: {0}'.format(rcode))
 
 
 def _restore_credentials_3_3(ctx, tempdir, file_server_root, es):
