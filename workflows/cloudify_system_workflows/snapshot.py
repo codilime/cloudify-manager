@@ -209,6 +209,7 @@ def _create(ctx, snapshot_id, config, include_metrics, include_credentials,
         _dump_agents(ctx, tempdir)
 
         # zip
+        ctx.send_event('Creating snapshot archive')
         snapshot_dir = os.path.join(snapshots_dir, snapshot_id)
         os.makedirs(snapshot_dir)
 
@@ -311,7 +312,7 @@ def _get_broker_configuration(client):
 
 
 def _dump_agents(ctx, tempdir):
-    ctx.logger.info('Preparing agents data.')
+    ctx.send_event('Preparing agents data')
     client = get_rest_client()
     defaults = _get_broker_configuration(client)
     defaults['version'] = _get_manager_version(client)
