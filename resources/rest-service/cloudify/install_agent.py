@@ -31,6 +31,10 @@ def get_cloudify_agent():
     return ctx_parameters['cloudify_agent']
 
 
+def get_broker_config():
+    return ctx_parameters['broker_config']
+
+
 def _shlex_split(command):
     lex = shlex.shlex(command, posix=True)
     lex.whitespace_split = True
@@ -129,6 +133,7 @@ class Installer(object):
         self.cloudify_agent = cloudify_agent
 
     def install(self):
+        broker_config = get_broker_config()
         path = tempfile.mkdtemp()
         try:
             package_path = os.path.join(path, self.runner.archive_name())
@@ -138,8 +143,14 @@ class Installer(object):
             self.runner.extract(package_path, path)
             agent_config_path = os.path.join(path, 'agent.json')
             agent_output_path = os.path.join(path, 'output.json')
+            broker_config_path = os.path.join(path, 'broker_config.json')
+            with open(broker_config_path, 'w') as broker_file:
+                broker_file.write(json.dumps(broker_config))
             with open(agent_config_path, 'w') as agent_file:
                 agent_file.write(json.dumps(self.cloudify_agent))
+            exec_env = {
+                'CLOUDIFY_BROKER_CONFIG_PATH': broker_config_path
+            }
             agent_cmd = self.runner.env_command(path, 'cfy-agent')
             command = ('{0} install-local'
                        ' --agent-file {1}'
@@ -147,7 +158,7 @@ class Installer(object):
                            agent_cmd,
                            agent_config_path,
                            agent_output_path)
-            self.runner.run(command)
+            self.runner.run(command, execution_env=exec_env)
             with open(agent_output_path) as agent_file:
                 return json.load(agent_file)
         finally:
