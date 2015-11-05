@@ -384,14 +384,6 @@ def _update_es_node(es_node):
             source['main_file_name'] = ''
 
 
-def _restore_elasticsearch(tempdir, es, metadata):
-    ctx.send_event('Deleting all ElasticSearch data')
-    elasticsearch.helpers.bulk(
-        es,
-        _clean_up_db_before_restore(es, ctx.execution_id))
-    es.indices.flush()
-
-
 def _assert_clean_elasticsearch(es):
     exception = NonRecoverableError('Manager is not clean')
 
@@ -413,7 +405,13 @@ def _assert_clean_elasticsearch(es):
         raise exception
 
 
-def _restore_elasticsearch(ctx, tempdir, es, metadata):
+def _restore_elasticsearch(tempdir, es, metadata):
+    ctx.send_event('Deleting all ElasticSearch data')
+    elasticsearch.helpers.bulk(
+        es,
+        _clean_up_db_before_restore(es, ctx.execution_id))
+    es.indices.flush()
+
     has_cloudify_events_index = es.indices.exists(index=_EVENTS_INDEX_NAME)
     snap_has_cloudify_events_index = metadata[_M_HAS_CLOUDIFY_EVENTS]
 
