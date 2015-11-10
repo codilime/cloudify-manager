@@ -405,12 +405,39 @@ def _assert_clean_elasticsearch(es):
         raise exception
 
 
+def _check_conflicts(es, restored_data):
+    old_data = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME,
+                                            doc_type='blueprint, deployment')
+    old_data = list(old_data)
+    if not len(old_data):
+        return
+
+    blueprints_names = [e['_id'] for e in old_data if e['_type'] == 'blueprint']
+    deployments_names = [e['_id'] for e in old_data
+                         if e['_type'] == 'deployment']
+
+    exception_message = 'There are blueprints/deployments names conflicts in ' \
+                        'manager and restored data: blueprints {0}, ' \
+                        'deployments {1}'
+    blueprints_conflicts = []
+    deployments_conflicts = []
+
+    for elem in restored_data:
+        if elem['_type'] == 'blueprint':
+            if elem['_id'] in blueprints_names:
+                blueprints_conflicts.append(elem['_id'])
+        else:
+            if elem['_id'] in deployments_names:
+                deployments_conflicts.append(elem['_id'])
+
+    if blueprints_conflicts or deployments_conflicts:
+        raise NonRecoverableError(
+            exception_message.format(blueprints_conflicts,
+                                     deployments_conflicts)
+        )
+
+
 def _restore_elasticsearch(tempdir, es, metadata):
-    ctx.send_event('Deleting all ElasticSearch data')
-    elasticsearch.helpers.bulk(
-        es,
-        _clean_up_db_before_restore(es, ctx.execution_id))
-    es.indices.flush()
 
     has_cloudify_events_index = es.indices.exists(index=_EVENTS_INDEX_NAME)
     snap_has_cloudify_events_index = metadata[_M_HAS_CLOUDIFY_EVENTS]
@@ -421,6 +448,8 @@ def _restore_elasticsearch(tempdir, es, metadata):
             elem = json.loads(line)
             _update_es_node(elem)
             yield elem
+
+    _check_conflicts(es, get_data_itr())
 
     # logstash-* -> cloudify_events
     def logstash_to_cloudify_events():
