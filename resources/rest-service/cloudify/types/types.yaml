@@ -449,6 +449,10 @@ workflows:
         default: []
       node_instance_ids:
         default: []
+      validate:
+        default: True
+      install:
+        default: True
 
 ##################################################################################
 # Base data type definitions
