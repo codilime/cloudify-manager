@@ -565,6 +565,10 @@ data_types:
         description: >
           Optional additional low level configuration details. (type: dictionary)
         required: false
+      plugins:
+        descprition: >
+          Optional plugins list that have to be installed in agent's environment. (type: list of dictonaries)
+        required: false
 
 ##################################################################################
 # Base artifact definitions
