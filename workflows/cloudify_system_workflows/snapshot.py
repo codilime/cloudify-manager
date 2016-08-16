@@ -19,8 +19,10 @@ import platform
 import tempfile
 import shutil
 import zipfile
-import itertools
 import os
+import pickle
+import psycopg2
+import psycopg2.extras
 import subprocess
 from datetime import datetime
 
@@ -48,6 +50,8 @@ _M_VERSION = 'snapshot_version'
 
 _AGENTS_FILE = 'agents.json'
 _ELASTICSEARCH = 'es_data'
+_POSTGRES_DUMP_FILENAME = 'pg_data'
+_POSTGRES_TEMP_DB_NAME ='temp_db'
 _CRED_DIR = 'snapshot-credentials'
 _RESTORED_CRED_DIR = os.path.join('/opt/manager', _CRED_DIR)
 _CRED_KEY_NAME = 'agent_key'
@@ -197,6 +201,9 @@ def _create(snapshot_id, config, include_metrics, include_credentials, **kw):
 
         metadata[_M_HAS_CLOUDIFY_EVENTS] = has_cloudify_events
 
+        # postgres
+        _dump_postgres(tempdir, config, metadata)
+
         # influxdb
         if include_metrics:
             _dump_influxdb(tempdir)
@@ -242,13 +249,38 @@ def create(snapshot_id, config, **kwargs):
         raise
 
 
+def _dump_postgres(tempdir, config, metadata):
+    ctx.logger.info('Dumping Postgres data')
+
+    postgres_dump_cmd = ('{cmd_dir}/pg_dump -a --host {host} -U {username} '
+                         '{database} -f {file} {flags}')
+
+    exclude_tables = ['snapshots', 'provider_context']
+
+    destination_path = os.path.join(tempdir, _POSTGRES_DUMP_FILENAME)
+    flags = ' '.join(
+        ['--exclude-table-data={0}'.format(t) for t in exclude_tables]
+    )
+
+    return_code = subprocess.call(postgres_dump_cmd.format(
+        cmd_dir=config.postgresql_bin_path,
+        database=config.postgresql_db_name,
+        file=destination_path,
+        username=config.postgresql_username,
+        host=config.postgresql_host,
+        flags=flags), shell=True)
+    if return_code != 0:
+        raise NonRecoverableError('Error during dumping Postgres data, '
+                                  'error code: {0}'.format(return_code))
+
+    # delete current execution
+    with open(destination_path, 'a') as f:
+        f.write("\nDELETE FROM executions WHERE id = '{0}';\n"
+                .format(ctx.execution_id))
+
+
 def _dump_elasticsearch(tempdir, es, has_cloudify_events):
     ctx.logger.info('Dumping elasticsearch data')
-    storage_scan = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME)
-    storage_scan = _except_types(storage_scan,
-                                 'provider_context',
-                                 'snapshot')
-    storage_scan = (e for e in storage_scan if e['_id'] != ctx.execution_id)
 
     event_scan = elasticsearch.helpers.scan(
         es,
@@ -256,7 +288,7 @@ def _dump_elasticsearch(tempdir, es, has_cloudify_events):
     )
 
     with open(os.path.join(tempdir, _ELASTICSEARCH), 'w') as f:
-        for item in itertools.chain(storage_scan, event_scan):
+        for item in event_scan:
             f.write(json.dumps(item) + os.linesep)
 
 
@@ -330,171 +362,9 @@ def _dump_agents(tempdir):
         out.write(json.dumps(result))
 
 
-def _add_operation(operations, op_name, inputs, implementation):
-    if op_name not in operations:
-        operations[op_name] = {
-            'inputs': inputs,
-            'has_intrinsic_functions': False,
-            'plugin': 'agent',
-            'retry_interval': None,
-            'max_retries': None,
-            'executor': 'central_deployment_agent',
-            'operation': implementation
-        }
-
-
-def _update_plugin(plugin):
-    for field in ('package_name',
-                  'package_version',
-                  'supported_platform',
-                  'distribution',
-                  'distribution_version',
-                  'distribution_release',):
-        plugin.setdefault(field, None)
-
-
-def _update_es_node(es_node):
-    node_type = es_node['_type']
-    node_data = es_node['_source']
-
-    if node_type == 'deployment':
-        _update_deployment_node_type(node_data)
-
-    if node_type == 'node':
-        _update_node_node_type(node_data)
-
-    if node_type == 'node_instance':
-        node_data.setdefault('scaling_groups', [])
-
-    if node_type == 'blueprint':
-        _update_blueprint_node_type(node_data)
-
-    if node_type == 'snapshot' and node_data['created_at']:
-        node_data['created_at'] = _convert_timestamp(node_data['created_at'])
-
-    if node_type == 'execution' and node_data['created_at']:
-        node_data['created_at'] = _convert_timestamp(node_data['created_at'])
-
-    if node_type == 'deployment_modification':
-        if node_data['created_at']:
-            node_data['created_at'] = \
-                _convert_timestamp(node_data['created_at'])
-        if node_data['ended_at']:
-            node_data['ended_at'] = _convert_timestamp(node_data['ended_at'])
-
-    if node_type == 'deployment_update' and node_data['created_at']:
-        node_data['created_at'] = _convert_timestamp(node_data['created_at'])
-
-    if node_type == 'plugin' and node_data['uploaded_at']:
-        node_data['uploaded_at'] = _convert_timestamp(node_data['uploaded_at'])
-
-    if 'timestamp' in node_data:
-        node_data['timestamp'] = \
-            _convert_timestamp(node_data['timestamp'][:-5])
-
-
-def _update_blueprint_node_type(node_data):
-    node_data.setdefault('description', '')
-    node_data.setdefault('main_file_name', '')
-    plan = node_data.get('plan', {})
-    for plugin in plan.get('deployment_plugins_to_install') or []:
-        _update_plugin(plugin)
-    for plugin in plan.get('workflow_plugins_to_install') or []:
-        _update_plugin(plugin)
-
-    if node_data['created_at']:
-        node_data['created_at'] = \
-            _convert_timestamp(node_data['created_at'])
-    if node_data['updated_at']:
-        node_data['updated_at'] = \
-            _convert_timestamp(node_data['updated_at'])
-
-
-def _update_node_node_type(node_data):
-    type_hierarchy = node_data.get('type_hierarchy', [])
-    if COMPUTE_NODE_TYPE in type_hierarchy:
-        plugins = node_data.setdefault('plugins', [])
-        if not any(p['name'] == 'agent' for p in plugins):
-            plugins.append({
-                'source': None,
-                'executor': 'central_deployment_agent',
-                'name': 'agent',
-                'install': False,
-                'install_arguments': None
-            })
-        operations = node_data['operations']
-        _add_operation(operations,
-                       'cloudify.interfaces.cloudify_agent.create_amqp',
-                       {
-                           'install_agent_timeout': 300
-                       },
-                       'cloudify_agent.operations.create_agent_amqp')
-        _add_operation(operations,
-                       'cloudify.interfaces.cloudify_agent.validate_amqp',
-                       {
-                           'validate_agent_timeout': 20
-                       },
-                       'cloudify_agent.operations.validate_agent_amqp')
-    node_data.setdefault('min_number_of_instances', 0)
-    node_data.setdefault('max_number_of_instances', -1)
-    for plugin in node_data.get('plugins') or []:
-        _update_plugin(plugin)
-    for plugin in node_data.get('plugins_to_install') or []:
-        _update_plugin(plugin)
-
-
-def _update_deployment_node_type(node_data):
-    workflows = node_data['workflows']
-    workflows.setdefault('install_new_agents', {
-        'operation': 'cloudify.plugins.workflows.install_new_agents',
-        'parameters': {
-            'install_agent_timeout': {
-                'default': 300
-            },
-            'node_ids': {
-                'default': []
-            },
-            'node_instance_ids': {
-                'default': []
-            }
-        },
-        'plugin': 'default_workflows'
-    })
-    node_data.setdefault('scaling_groups', {})
-    node_data.setdefault('description', None)
-    if node_data['created_at']:
-        node_data['created_at'] = \
-            _convert_timestamp(node_data['created_at'])
-    if node_data['updated_at']:
-        node_data['updated_at'] = \
-            _convert_timestamp(node_data['updated_at'])
-
-
-def _convert_timestamp(timestamp):
-    try:
-        timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-    except ValueError:
-        return timestamp
-    # Adding 'Z' to match ISO format
-    return '{0}Z'.format(timestamp.isoformat()[:-3])
-
-
-def _include_es_node(es_node, existing_plugins, new_plugins):
-    node_type = es_node['_type']
-    node_data = es_node['_source']
-
-    if node_type == 'plugin':
-        new_plugin = node_data['archive_name'] not in existing_plugins
-        if new_plugin:
-            new_plugins.append(node_data)
-        return new_plugin
-
-    return True
-
-
-def _assert_clean_elasticsearch(log_warning=False):
+def _assert_clean_postgres(log_warning=False):
     """
-    Check if manager ElasticSearch is clean and raise error (or just
+    Check if Postgres is clean and raise error (or just
     log warning) if it isn't.
 
     :param log_warning: instead raising error just log warning
@@ -513,48 +383,47 @@ def _assert_clean_elasticsearch(log_warning=False):
                 "Snapshot restoration on a dirty manager is not permitted.")
 
 
-def _check_conflicts(es, restored_data):
-    """
-    Check names conflicts in restored snapshot and manager.
-    If in restored snapshot there are blueprints/deployments then
-    manager cannot contain any blueprints/deployments with the same names.
+def _restore_postgres(tempdir, config):
+    ctx.logger.info('Restoring Postgres data')
 
-    :param es: ElasticSearch proxy object
-    :param restored_data: iterator to snapshots Elasticsearch data that
-        is supposed to be restored
-    """
+    postgres_restore_cmd = ('{cmd_dir}/psql --single-transaction --host '
+                            '{host} -U {username} {database} -f {file}')
 
-    old_data = elasticsearch.helpers.scan(es, index=_STORAGE_INDEX_NAME,
-                                          doc_type='blueprint,deployment')
-    old_data = list(old_data)
-    # if there is no data in manager then just return
-    if not len(old_data):
-        return
+    # delete all existing executions except the current one
+    conn = _postgres_create_connection(config)
+    pg_cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    blueprints_names = [e['_id'] for e in old_data
-                        if e['_type'] == 'blueprint']
-    deployments_names = [e['_id'] for e in old_data
-                         if e['_type'] == 'deployment']
+    pg_cur.execute('DELETE FROM executions WHERE id != %s',
+                   (ctx.execution_id,))
+    conn.commit()
+    conn.close()
 
-    exception_message = 'There are blueprints/deployments names conflicts ' \
-                        'in manager and restored data: blueprints {0}, ' \
-                        'deployments {1}'
-    blueprints_conflicts = []
-    deployments_conflicts = []
+    client = get_rest_client()
+    existing_plugins = client.plugins.list().items
+    existing_plugins_archive_names = set(p.archive_name for p in
+                                         existing_plugins)
 
-    for elem in restored_data:
-        if elem['_type'] == 'blueprint':
-            if elem['_id'] in blueprints_names:
-                blueprints_conflicts.append(elem['_id'])
-        else:
-            if elem['_id'] in deployments_names:
-                deployments_conflicts.append(elem['_id'])
+    out_file = os.path.join(tempdir, _POSTGRES_DUMP_FILENAME)
 
-    if blueprints_conflicts or deployments_conflicts:
-        raise NonRecoverableError(
-            exception_message.format(blueprints_conflicts,
-                                     deployments_conflicts)
-        )
+    return_code = subprocess.call(postgres_restore_cmd.format(
+        cmd_dir=config.postgresql_bin_path,
+        database=config.postgresql_db_name,
+        username=config.postgresql_username,
+        host=config.postgresql_host,
+        password=config.postgresql_password,
+        file=out_file), shell=True)
+    if return_code != 0:
+        raise NonRecoverableError('Error during restoring Postgres data, '
+                                  'error code: {0}'.format(return_code))
+
+    all_plugins = client.plugins.list().items
+
+    plugins_to_install = filter(
+        lambda x: x.archive_name not in existing_plugins_archive_names,
+        all_plugins
+    )
+
+    return plugins_to_install
 
 
 def _restore_elasticsearch(tempdir, es, metadata, bulk_read_timeout):
@@ -562,19 +431,11 @@ def _restore_elasticsearch(tempdir, es, metadata, bulk_read_timeout):
     has_cloudify_events_index = es.indices.exists(index=_EVENTS_INDEX_NAME)
     snap_has_cloudify_events_index = metadata[_M_HAS_CLOUDIFY_EVENTS]
 
-    existing_plugins = set(p.archive_name for p in
-                           get_rest_client().plugins.list().items)
-    new_plugins = []
-
     # cloudify_events -> cloudify_events, logstash-* -> logstash-*
     def get_data_itr():
         for line in open(os.path.join(tempdir, _ELASTICSEARCH), 'r'):
             elem = json.loads(line)
-            if _include_es_node(elem, existing_plugins, new_plugins):
-                _update_es_node(elem)
-                yield elem
-
-    _check_conflicts(es, get_data_itr())
+            yield elem
 
     # logstash-* -> cloudify_events
     def logstash_to_cloudify_events():
@@ -603,12 +464,22 @@ def _restore_elasticsearch(tempdir, es, metadata, bulk_read_timeout):
 
     ctx.logger.info('Restoring ElasticSearch data '
                     '[timeout={0} sec]'.format(bulk_read_timeout))
+
+    try:
+        first = next(data_iter)
+    except StopIteration:
+        # no elements to restore
+        return
+
+    def not_empty_data_iter():
+        yield first
+        for e in data_iter:
+            yield e
+
     elasticsearch.helpers.bulk(es,
-                               data_iter,
+                               not_empty_data_iter(),
                                request_timeout=bulk_read_timeout)
     es.indices.flush()
-
-    return new_plugins
 
 
 def _restore_influxdb_3_3(tempdir):
@@ -622,9 +493,12 @@ def _restore_influxdb_3_3(tempdir):
                                       'error code: {0}'.format(rcode))
 
 
-def _restore_credentials_3_3(tempdir, es):
+def _restore_credentials_3_3(tempdir, config):
     ctx.logger.info('Restoring credentials')
     archive_cred_path = os.path.join(tempdir, _CRED_DIR)
+
+    conn = _postgres_create_connection(config)
+    pg_cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # in case when this is not the first restore action
     if os.path.exists(_RESTORED_CRED_DIR):
@@ -632,32 +506,32 @@ def _restore_credentials_3_3(tempdir, es):
 
     os.makedirs(_RESTORED_CRED_DIR)
 
-    update_actions = []
     if os.path.exists(archive_cred_path):
-        for node_id in os.listdir(archive_cred_path):
-            os.makedirs(os.path.join(_RESTORED_CRED_DIR, node_id))
-            agent_key_path = os.path.join(_RESTORED_CRED_DIR, node_id,
+        for dep_node_id in os.listdir(archive_cred_path):
+            os.makedirs(os.path.join(_RESTORED_CRED_DIR, dep_node_id))
+            agent_key_path = os.path.join(_RESTORED_CRED_DIR, dep_node_id,
                                           _CRED_KEY_NAME)
-            shutil.copy(os.path.join(archive_cred_path, node_id,
+            shutil.copy(os.path.join(archive_cred_path, dep_node_id,
                         _CRED_KEY_NAME), agent_key_path)
 
-            update_action = {
-                '_op_type': 'update',
-                '_index': _STORAGE_INDEX_NAME,
-                '_type': 'node',
-                '_id': node_id,
-                'doc': {
-                    'properties': {
-                        'cloudify_agent': {
-                            'key': agent_key_path
-                        }
-                    }
-                }
-            }
+            dep_id, node_id = dep_node_id.split('_')
 
-            update_actions.append(update_action)
+            pg_cur.execute(
+                'SELECT properties FROM nodes WHERE id = %s '
+                'AND deployment_id = %s', (node_id, dep_id)
+            )
+            pickled_properties = pg_cur.fetchone()
+            properties = pickle.loads(pickled_properties['properties'])
+            properties['cloudify_agent']['key'] = agent_key_path
 
-    elasticsearch.helpers.bulk(es, update_actions)
+            new_pickled_properties = pickle.dumps(properties)
+
+            pg_cur.execute('UPDATE nodes SET properties = %s WHERE id = %s '
+                           'AND deployment_id = %s',
+                           (new_pickled_properties, node_id, dep_id))
+
+    conn.commit()
+    conn.close()
 
 
 def create_agent(client, nodes):
@@ -691,7 +565,9 @@ def create_agent(client, nodes):
             runtime_properties.pop('agent_status', None)
             client.node_instances.update(
                 node_instance_id=node_instance_id,
-                runtime_properties=runtime_properties)
+                runtime_properties=runtime_properties,
+                version=node_instance.version
+            )
 
 
 def insert_agents_data(client, agents):
@@ -712,28 +588,48 @@ def _restore_agents_data(tempdir):
     insert_agents_data(client, agents)
 
 
-def _restore_snapshot(config, tempdir, metadata, elasticsearch_read_timeout):
+def _postgres_create_connection(config):
+    try:
+        return psycopg2.connect(
+            database=config.postgresql_db_name,
+            user=config.postgresql_username,
+            password=config.postgresql_password,
+            host=config.postgresql_host
+        )
+    except psycopg2.DatabaseError as e:
+        raise NonRecoverableError('Error during connection to postgres: {0}'
+                                  .format(str(e)))
+
+
+def _restore_snapshot(config, tempdir, metadata, elasticsearch_read_timeout,
+                      is_postgres):
     # files/dirs copy
     _copy_data(tempdir, config, to_archive=False)
 
-    # elasticsearch
+    # elasticsearch (events)
     es = _create_es_client(config)
 
-    new_plugins = _restore_elasticsearch(tempdir, es, metadata,
-                                         elasticsearch_read_timeout)
+    _restore_elasticsearch(tempdir, es, metadata,
+                           elasticsearch_read_timeout)
+
+    plugins = []
+
+    # postgres
+    if is_postgres:
+        plugins = _restore_postgres(tempdir, config)
 
     # influxdb
     _restore_influxdb_3_3(tempdir)
 
     # credentials
-    _restore_credentials_3_3(tempdir, es)
+    _restore_credentials_3_3(tempdir, config)
 
     es.indices.flush()
 
     # agents
     _restore_agents_data(tempdir)
 
-    return new_plugins
+    return plugins
 
 
 def _plugin_installable_on_current_platform(plugin):
@@ -792,7 +688,7 @@ def restore(snapshot_id, recreate_deployments_envs, config, force, timeout,
 
     config = _DictToAttributes(config)
 
-    _assert_clean_elasticsearch(log_warning=force)
+    _assert_clean_postgres(log_warning=force)
 
     tempdir = tempfile.mkdtemp('-snapshot-data')
 
@@ -829,9 +725,12 @@ def restore(snapshot_id, recreate_deployments_envs, config, force, timeout,
         ctx.logger.info('Starting restoring snapshot of manager {0}'
                         .format(from_version))
 
-        new_plugins = _restore_snapshot(config, tempdir, metadata, timeout)
+        plugins_to_install = _restore_snapshot(
+            config, tempdir, metadata, timeout,
+            from_version.equals(manager_version))
 
-        install_plugins(new_plugins)
+        if plugins_to_install:
+            install_plugins(plugins_to_install)
 
         if recreate_deployments_envs:
             recreate_deployments_environments(existing_deployments_ids)

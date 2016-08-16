@@ -108,7 +108,12 @@ class BlueprintsManager(object):
             'created_status': models.Snapshot.CREATED,
             'failed_status': models.Snapshot.FAILED,
             'file_server_uploaded_plugins_folder':
-                config.instance().file_server_uploaded_plugins_folder
+                config.instance().file_server_uploaded_plugins_folder,
+            'postgresql_bin_path': config.instance().postgresql_bin_path,
+            'postgresql_username': config.instance().postgresql_username,
+            'postgresql_password': config.instance().postgresql_password,
+            'postgresql_db_name': config.instance().postgresql_db_name,
+            'postgresql_host': config.instance().postgresql_host
         }
 
     def create_snapshot_model(self, snapshot_id,
